@@ -2,7 +2,7 @@
 
 配信者が一人で話すときの「話し相手」になるツールです。話した内容に沿って次の話題を提案し、発言だけをもとにした要約メモを作ります。ログ（要約・文字起こし）とネタ帳は端末内に保存します。
 
-**公開版: https://son-jo-sokora.github.io/topic-generator/** （Chrome推奨。各自のAnthropic APIキーが必要です。2026-11-05 からリポジトリを非公開にしているため、公開版は停止中）
+**公開版: https://son-jo-sokora.github.io/topic-generator/** （Chrome推奨。各自のAIのAPIキー（Anthropic・OpenAI・Google Gemini のいずれか）か、手元のLLMが必要です）
 
 - ファイルは **`topic-generator.html` の1つだけ**です。ビルドや外部ライブラリは要りません。
 - Claude内（artifact）と単体のウェブページのどちらでも動きます。`window.claude` があるかどうかで自動的に切り替えます。
