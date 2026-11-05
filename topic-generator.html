@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>話題ジェネレーター</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+:root{--bg:#f3f4f8;--panel:#fff;--text:#1c2030;--sub:#5d6478;--line:#dfe2ec;--accent:#5b4fd6;--onaccent:#fff;--soft:#eeecff;--warn:#d64545;--shadow:0 1px 2px rgba(20,24,40,.06),0 4px 14px rgba(20,24,40,.05);
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11141c;--panel:#1a1f2d;--text:#e9ebf3;--sub:#98a0b6;--line:#2b3246;--accent:#a99cff;--onaccent:#17142e;--soft:#262a45;--warn:#ff7b7b;--shadow:none;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11141c;--panel:#1a1f2d;--text:#e9ebf3;--sub:#98a0b6;--line:#2b3246;--accent:#a99cff;--onaccent:#17142e;--soft:#262a45;--warn:#ff7b7b;--shadow:none;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;line-height:1.6}
+[hidden]{display:none!important}
+h1{font-size:17px;margin:0;white-space:nowrap}
+h2{font-size:15px;margin:0 0 6px}
+.sub{color:var(--sub);font-size:12.5px;margin:0 0 10px}
+.note{font-size:12px;color:var(--sub);margin:8px 0 0}
+label{display:block;font-size:12.5px;color:var(--sub);margin:10px 0 4px}
+label.check{display:flex;gap:8px;align-items:center;color:var(--text);font-size:13.5px}
+label.check input{width:auto;margin:0}
+select,input[type=text],input[type=password],textarea{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:inherit;font-size:14px}
+textarea{min-height:110px;resize:vertical}
+button{font:inherit;font-size:13.5px;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:7px 12px}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+button.primary{background:var(--accent);color:var(--onaccent);border-color:var(--accent);font-weight:700}
+button.small{padding:2px 10px;font-size:12px}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;margin-top:8px;align-items:center}
+.row>input,.row>select{flex:1;min-width:0}
+.row button{flex:1}
+.row button.fit{flex:none}
+
+/* 上部の帯 */
+.top{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+.top-in{max-width:1480px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.top .ctl{display:flex;gap:8px}
+#go{min-width:150px;padding:9px 16px}
+#go.on{background:var(--warn);border-color:var(--warn);color:#fff}
+.top .stat{flex:1;min-width:200px}
+#status{font-size:13px;min-height:20px}
+.top .meta{display:flex;gap:12px;flex-wrap:wrap}
+.top .meta .note{margin:0}
+
+/* 3列 */
+.layout{max-width:1480px;margin:0 auto;padding:16px;display:grid;grid-template-columns:300px minmax(0,1fr) 400px;gap:16px;align-items:start}
+@media (max-width:1180px){.layout{grid-template-columns:280px minmax(0,1fr)}.side{grid-column:1/-1}}
+@media (max-width:760px){.layout{grid-template-columns:1fr}.stage{order:-1}.top{position:static}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+
+/* 左: 設定 */
+.settings{display:flex;flex-direction:column;gap:10px}
+details.group{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0 14px;box-shadow:var(--shadow)}
+details.group>summary{cursor:pointer;list-style:none;padding:11px 0;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+details.group>summary::-webkit-details-marker{display:none}
+details.group>summary::after{content:"＋";color:var(--sub);font-weight:400}
+details.group[open]>summary::after{content:"－"}
+details.group[open]{padding-bottom:14px}
+details.inner{margin-top:10px;font-size:13px}
+details.inner>summary{cursor:pointer;color:var(--sub)}
+.feat{display:grid;grid-template-columns:1fr;gap:2px}
+.feat label{margin:4px 0}
+.feat .d{display:block;font-size:11.5px;color:var(--sub);margin-left:26px;margin-top:-2px}
+
+/* 中央: 話題 */
+.stage{display:flex;flex-direction:column;gap:12px;min-width:0}
+.runbar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:8px 12px;box-shadow:var(--shadow)}
+.runbar .a{font-size:12px;color:var(--sub)}
+.runbar .over{color:var(--warn);font-weight:700}
+.runbar .sp{flex:1}
+.silencebar{background:var(--soft);border:1px solid var(--accent);border-radius:10px;padding:8px 12px;font-weight:700}
+#interim{font-size:13px;color:var(--sub);min-height:20px;margin:0}
+.batch{margin-bottom:16px}
+.said{font-size:12px;color:var(--sub);margin:0 0 6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.card{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;width:100%;box-shadow:var(--shadow);transition:opacity .15s}
+.card h3{font-size:16px;margin:0 0 4px}
+.card .a{font-size:13px;color:var(--sub);margin:0 0 8px}
+.card .o{font-size:14px;background:var(--soft);border-radius:6px;padding:6px 10px;margin:0}
+.card.used{opacity:.45}
+.card.used h3{text-decoration:line-through}
+.batch.alert .card{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.empty{color:var(--sub);font-size:14px;padding:28px 4px;text-align:center}
+.chatl{list-style:none;margin:8px 0 0;padding:0;max-height:300px;overflow:auto}
+.chatl li{padding:6px 4px;border-bottom:1px solid var(--line);font-size:14px;cursor:pointer;border-radius:4px}
+.chatl li.q{background:var(--soft)}
+.chatl li.done{opacity:.45}
+.chatl .by{font-size:12px;color:var(--sub);margin-right:6px}
+
+/* 右: タブ */
+.side{padding:0;overflow:hidden}
+.sidetabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+.sidetabs button{flex:1;border:0;border-radius:0;background:transparent;padding:10px 8px;font-size:13px;color:var(--sub);border-bottom:2px solid transparent;white-space:nowrap}
+.sidetabs button[aria-selected=true]{color:var(--text);font-weight:700;border-bottom-color:var(--accent)}
+.pane{padding:14px}
+.tabs{display:flex;gap:6px;margin-bottom:8px}
+.tabs button[aria-pressed=true]{background:var(--soft);border-color:var(--accent)}
+.tabs .sp{flex:1}
+#memo{min-height:280px;font-size:13.5px}
+.rsec{margin-top:12px}
+.rh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rh h3{font-size:13px;margin:0;color:var(--sub)}
+.rsec pre,pre.prep{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:13.5px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0 0}
+.sec+.sec{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.nb .row input{flex:1;min-width:0}
+.nbl{list-style:none;margin:10px 0 0;padding:0}
+.nbl li{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
+.nbl li.off{opacity:.45}
+.nbl .nbb{min-width:0}
+.nbl .a{display:block;font-size:12px;color:var(--sub)}
+.nbl .nbbar{display:flex;gap:4px;flex:none}
+.nbl .nbbar button{padding:2px 8px;font-size:12px}
+.nbl .empty{display:block;padding:12px 0;text-align:left}
+.hits{list-style:none;margin:8px 0 0;padding:0}
+.hits li{padding:6px 0;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
+.hits .a{display:block;font-size:12px;color:var(--sub)}
+</style>
+</head>
+<body>
+<header class="top">
+<div class="top-in">
+<h1>話題ジェネレーター</h1>
+<div class="ctl"><button id="go" class="primary" type="button">マイクを開始</button><button id="now" type="button" data-feature="topics">今すぐ話題をもらう</button></div>
+<div class="stat"><div id="status" role="status">停止中</div></div>
+<div class="meta"><p class="note" id="saveNote">保存:準備中</p><p class="note" id="usage" data-feature="usage"></p></div>
+</div>
+</header>
+<main class="layout">
+
+<!-- 左: 設定 -->
+<section class="settings" aria-label="設定">
+<details class="group" id="g-features"><summary>機能のオン・オフ</summary>
+<p class="sub">使わない機能を切ると、画面から消え、AIの呼び出しも止まります。マイク・文字起こし・保存はいつも使えます。</p>
+<div id="featList" class="feat"></div>
+</details>
+
+<details class="group" id="g-ai" open><summary>AIの接続</summary>
+<div id="keyBox" hidden>
+<label for="aiProvider">提供元</label>
+<select id="aiProvider"><option value="anthropic">Anthropic(Claude)</option><option value="openai">OpenAI</option><option value="gemini">Google Gemini</option><option value="compat">OpenAI互換(Ollama・LM Studio など)</option></select>
+<div id="aiBaseBox" hidden><label for="aiBase">接続先のURL</label><input id="aiBase" type="text" value="http://127.0.0.1:11434/v1"></div>
+<label for="apiKey" id="apiKeyLabel">APIキー</label>
+<input id="apiKey" type="password" autocomplete="off" placeholder="sk-ant-...">
+<label for="modelName">モデル</label>
+<input id="modelName" type="text" value="claude-haiku-5-5">
+<label class="check"><input id="keyRemember" type="checkbox"> このブラウザに保存する</label>
+<p class="note" id="keyNote">キーは、このブラウザから選んだ提供元へ直接送られ、他には送りません。共有のPCでは保存しないでください。</p>
+<details class="inner" data-feature="usage"><summary>料金の目安を設定</summary>
+<p class="note">提供元の料金ページで確認した、100万トークンあたりの料金(ドル)を入れると、利用料の目安を上部に表示します。</p>
+<div class="row"><input id="priceIn" type="text" inputmode="decimal" placeholder="入力 $/100万" aria-label="入力の料金"><input id="priceOut" type="text" inputmode="decimal" placeholder="出力 $/100万" aria-label="出力の料金"></div>
+</details>
+</div>
+<p class="note">提案・要約などのたびに、AIの利用料(Claudeの利用枠、またはAPI料金)がかかります。話した内容の記録とネタ帳は、このブラウザの中にだけ保存されます。</p>
+</details>
+
+<details class="group" id="g-topics" open data-feature="topics"><summary>話題の出し方</summary>
+<label for="mode">話題の方向</label>
+<select id="mode">
+<option value="mix">混ぜる(続き+少し離れた話題)</option>
+<option value="deep">今の話を深掘りする</option>
+<option value="far">今の話から少し離れた関連話題</option>
+</select>
+<div class="row"><div style="flex:1"><label for="count">提案の数</label><select id="count"><option>3</option><option selected>4</option><option>5</option></select></div>
+<div style="flex:1.4"><label for="style">配信スタイル</label><select id="style"><option value="chat">雑談</option><option value="game">ゲーム実況</option><option value="work">作業配信</option><option value="radio">ラジオ・トーク(複数人)</option><option value="learn">学び・解説</option></select></div></div>
+<label for="profile">あなたの関心・背景</label>
+<textarea id="profile" placeholder="空欄でも使えます。書くと、話題があなた向けになります。例:&#10;・よく話すテーマ(映画、ゲーム、読書など)&#10;・最近ハマっていること"></textarea>
+<div data-feature="silence">
+<label for="silence">沈黙の知らせ</label>
+<select id="silence"><option value="0">使わない</option><option value="15">15秒黙ったら</option><option value="30" selected>30秒黙ったら</option><option value="60">60秒黙ったら</option></select>
+</div>
+</details>
+
+<details class="group" id="g-stt"><summary>音声認識</summary>
+<label for="sttMode">方式</label>
+<select id="sttMode"><option value="browser">ブラウザの音声認識(Chrome)</option><option value="local" data-feature="localStt">手元のWhisper(文字起こしサーバー)</option></select>
+<div id="sttLocalBox" hidden>
+<label for="sttWords">認識させたい語(任意、カンマ区切り)</label>
+<input id="sttWords" type="text" placeholder="例:人名, 作品名, 専門用語">
+<p class="note">このPCで local-asr/start.bat を起動してから使います。音声はこのPCの中だけで文字にします。つながらないときはブラウザの音声認識に切り替えます。</p>
+</div>
+<label for="sttUrl">手元のサーバー(local-asr)のURL</label>
+<input id="sttUrl" type="text" value="http://127.0.0.1:8790">
+<p class="note">手元のWhisper・OBS表示・ニュースの取得で使います。「ブラウザの音声認識」では、マイクの音声はブラウザの機能(ChromeではGoogleのサーバー)で文字にされます。</p>
+</details>
+
+<details class="group" id="g-news" data-feature="news"><summary>時事ネタ</summary>
+<label for="newsMode">話題に</label>
+<select id="newsMode"><option value="on">混ぜる(1〜2個)</option><option value="off">混ぜない</option></select>
+<label for="news">材料(書き換えOK。ここに書いたことだけを事実として使います)</label>
+<textarea id="news" placeholder="気になったニュースの見出しを1行ずつ。例:&#10;・〇〇が新しい△△を発表した(11月4日)"></textarea>
+<div class="row"><button id="newsFetch" type="button">ニュースの見出しを取ってくる</button></div>
+<div id="newsStat" class="note"></div>
+<details class="inner"><summary>取得元(RSS)</summary>
+<textarea id="newsFeeds" style="min-height:60px" placeholder="RSSのURLを1行に1つ(例:https://example.com/news.xml)"></textarea>
+<p class="note">手元のサーバー(local-asr)を通して、見出しだけを取ります。取得元ごとのRSSの利用条件に従って使ってください。</p>
+</details>
+</details>
+
+<details class="group" id="g-overlay" data-feature="overlay"><summary>OBSに表示</summary>
+<label class="check"><input id="ovOn" type="checkbox"> 手元のサーバーに送る</label>
+<p class="note">local-asr/start.bat(文字起こしが不要なら --no-asr を付ける)を起動し、OBSの「ブラウザ」ソースに http://127.0.0.1:8790/overlay を指定します。</p>
+<label for="ovTopic">お題(画面に出す文)</label>
+<div class="row"><input id="ovTopic" type="text" placeholder="話題カードをダブルクリックでも入ります"><button id="ovClear" type="button" class="fit">消す</button></div>
+<label class="check" data-feature="plan"><input id="ovTimer" type="checkbox" checked> 進行表のコーナーと残り時間も出す</label>
+<div id="ovStat" class="note"></div>
+</details>
+</section>
+
+<!-- 中央: 配信中に見るところ -->
+<section class="stage" aria-label="話題">
+<div id="runBar" class="runbar" hidden><strong id="runSeg"></strong><span id="runTime"></span><span id="runNext" class="a"></span><span id="runTotal" class="a"></span><span class="sp"></span><button id="planNext" type="button" class="small">次へ</button><button id="planReset" type="button" class="small">終了</button></div>
+<div id="silenceBar" class="silencebar" role="alert" hidden></div>
+<p id="interim"></p>
+<div id="out" data-feature="topics"><p class="empty">マイクを開始して話すか、「今すぐ話題をもらう」を押すと、ここに話題が並びます。<br>使った話題はクリックで取り消し線、ダブルクリックでOBSのお題になります。</p></div>
+<div class="row"><input id="manual" type="text" placeholder="マイクなしで試す:ここに入力してEnter" aria-label="テキストで話す"></div>
+<div class="panel" data-feature="chat">
+<h2>視聴者のコメント</h2>
+<div class="row"><select id="chatSrc" aria-label="コメントの取り込み元" style="flex:none;width:auto"><option value="">取り込まない</option><option value="twitch">Twitch</option><option value="youtube">YouTube Live</option></select><input id="chatId" type="text" placeholder="Twitchのチャンネル名 / YouTubeの配信URL" aria-label="チャンネル名または配信URL"><button id="chatConnect" type="button" class="fit">接続</button></div>
+<div id="ytKeyBox" class="row" hidden><input id="ytKey" type="password" autocomplete="off" placeholder="YouTube Data API のキー(Google Cloud で発行)" aria-label="YouTube Data API のキー"></div>
+<label class="check"><input id="chatUse" type="checkbox" checked> 話題の提案に使う(答えていない新しいコメント10件まで)</label>
+<div id="chatStat" class="note"></div>
+<ul id="chatList" class="chatl"></ul>
+<p class="note">クリックで「答えた」印、Shift+クリックでOBSに表示します。質問らしいコメントは色が付きます。</p>
+</div>
+</section>
+
+<!-- 右: メモ・まとめ・ネタ帳・準備・過去 -->
+<aside class="panel side" aria-label="記録と道具">
+<div class="sidetabs" role="tablist">
+<button type="button" role="tab" data-pane="memo" aria-selected="true">メモ</button>
+<button type="button" role="tab" data-pane="recap" data-feature="recap">まとめ</button>
+<button type="button" role="tab" data-pane="nb" data-feature="notebook">ネタ帳</button>
+<button type="button" role="tab" data-pane="prep" data-feature="prep|plan">準備</button>
+<button type="button" role="tab" data-pane="past">過去</button>
+</div>
+
+<div class="pane" id="pane-memo" role="tabpanel">
+<div class="tabs"><button id="tabSum" type="button" aria-pressed="true" data-feature="summary">要約メモ</button><button id="tabRaw" type="button" aria-pressed="false">文字起こし</button><span class="sp"></span><button id="copy" type="button">コピー</button></div>
+<textarea id="memo" readonly aria-label="話した内容のメモ"></textarea>
+<div class="row"><button id="dl" type="button" hidden>ダウンロード(.md)</button><button id="newSess" type="button">新しいセッション</button></div>
+<div data-feature="correction">
+<div class="row"><button id="fixBtn" type="button">誤変換をAIで補正</button><button id="fixUndo" type="button" hidden>補正前に戻す</button></div>
+<div id="fixStat" class="note"></div>
+</div>
+<label for="past">表示するセッション</label>
+<select id="past"><option value="">(いまのセッション)</option></select>
+</div>
+
+<div class="pane" id="pane-recap" role="tabpanel" hidden>
+<div class="recap">
+<h2>配信のまとめ</h2>
+<p class="sub">文字起こしから、タイトル案・概要欄・チャプター・切り抜き候補・振り返り投稿を作ります。「メモ」タブで過去のセッションを選ぶと、その回のまとめを作れます(AIの利用料が1回分かかります)。</p>
+<button id="recapBtn" type="button" class="primary">配信のまとめを作る</button>
+<div id="recapStat" class="note" role="status"></div>
+<div id="recapOut" hidden>
+<label for="recapOffset">チャプターの時刻をずらす(動画の開始から話し始めまでの時間。例 1:30)</label>
+<input id="recapOffset" type="text" inputmode="numeric" placeholder="0:00">
+<div class="rsec"><div class="rh"><h3>タイトル案</h3><button type="button" class="small" data-copy="titles">コピー</button></div><pre id="r_titles"></pre></div>
+<div class="rsec"><div class="rh"><h3>概要欄</h3><button type="button" class="small" data-copy="description">コピー</button></div><pre id="r_description"></pre></div>
+<div class="rsec"><div class="rh"><h3>チャプター</h3><button type="button" class="small" data-copy="chapters">コピー</button></div><pre id="r_chapters"></pre></div>
+<div class="rsec"><div class="rh"><h3>切り抜き候補</h3><button type="button" class="small" data-copy="highlights">コピー</button></div><pre id="r_highlights"></pre></div>
+<div class="rsec"><div class="rh"><h3>振り返り投稿(X)</h3><button type="button" class="small" data-copy="posts">コピー</button></div><pre id="r_posts"></pre></div>
+<p class="note" id="recapWhen"></p>
+</div>
+</div>
+</div>
+
+<div class="pane nb" id="pane-nb" role="tabpanel" hidden>
+<h2>ネタ帳</h2>
+<p class="sub">話題の元になるメモ置き場です。「固定」は優先して使い、「除外」は使いません。</p>
+<div class="row"><input id="nbTitle" type="text" placeholder="ネタ(例:最近読んだ本の話)" aria-label="ネタ"><input id="nbTags" type="text" placeholder="タグ(カンマ区切り)" aria-label="タグ"></div>
+<div class="row"><input id="nbNote" type="text" placeholder="ひとこと補足(任意)" aria-label="補足"><button id="nbAdd" type="button" class="fit">追加</button></div>
+<details class="inner"><summary>文章・投稿から取り込む(AIがネタに整理)</summary>
+<textarea id="nbPaste" placeholder="メモ、日記、投稿などを貼り付け。Xの公式アーカイブの tweets.js も読み込めます(いいねの多い投稿から使います)" style="margin-top:8px"></textarea>
+<div class="row"><input id="nbFile" type="file" accept=".txt,.md,.json,.js" aria-label="ファイルを読み込む"><button id="nbImport" type="button" class="fit">ネタに整理する</button></div>
+<p class="note">ファイルはブラウザ内で読み込み、上の欄に表示された本文だけが整理のためにAIへ送られます。</p>
+</details>
+<div class="row"><button id="nbFromLog" type="button" data-feature="summary">要約からネタを拾う</button><button id="nbExport" type="button" hidden>書き出し(.md)</button></div>
+<div id="nbStat" class="note"></div>
+<ul id="nbList" class="nbl"></ul>
+</div>
+
+<div class="pane" id="pane-prep" role="tabpanel" hidden>
+<div class="sec" data-feature="plan">
+<h2>進行表・タイマー</h2>
+<p class="sub">1行に1コーナー、「名前 分」の形で書いて「開始」。中央の上に今のコーナーと残り時間が出ます。</p>
+<textarea id="planText" placeholder="例:&#10;オープニング 5&#10;近況トーク 15&#10;お便り 10&#10;エンディング 5"></textarea>
+<div class="row"><button id="planStart" type="button" class="primary">開始</button></div>
+</div>
+<div class="sec" data-feature="prep">
+<h2>配信前の準備</h2>
+<p class="sub">テーマと長さから、コーナーの流れ・オープニング・話題の候補・締めの一言の案をAIが作ります。</p>
+<input id="prepTheme" type="text" placeholder="今日のテーマ(例:週末のキャンプの振り返り)" aria-label="今日のテーマ">
+<div class="row"><input id="prepMin" type="text" inputmode="numeric" placeholder="予定の長さ(分)例 60" aria-label="予定の長さ"><button id="prepGo" type="button" class="fit">案を作る</button></div>
+<div id="prepStat" class="note"></div>
+<div id="prepOut" hidden>
+<pre id="prepText" class="prep"></pre>
+<div class="row"><button id="prepToPlan" type="button" data-feature="plan">進行表に入れる</button><button id="prepToNb" type="button" data-feature="notebook">話題をネタ帳へ</button></div>
+</div>
+</div>
+</div>
+
+<div class="pane" id="pane-past" role="tabpanel" hidden>
+<div class="sec" data-feature="search">
+<h2>過去の配信を探す</h2>
+<div class="row"><input id="searchQ" type="text" placeholder="言葉を入れてEnter" aria-label="探す言葉"><button id="searchGo" type="button" class="fit">探す</button></div>
+<p class="note">要約・文字起こし・まとめから探します。クリックでその回を「メモ」に開きます。</p>
+<div id="searchStat" class="note"></div>
+<ul id="hits" class="hits"></ul>
+</div>
+<div class="sec" data-feature="backup">
+<h2>バックアップと移行</h2>
+<p class="sub">ログ・ネタ帳・設定をまとめて書き出し、別のブラウザやPCで読み込めます(APIキーは含めません)。</p>
+<div class="row"><button id="bkExport" type="button">すべて書き出し(.json)</button><button id="bkImportBtn" type="button">読み込む</button><input id="bkImport" type="file" accept=".json,application/json" hidden></div>
+<div id="bkStat" class="note"></div>
+</div>
+<p class="note" data-feature="!search !backup">「機能のオン・オフ」で、検索とバックアップが切られています。</p>
+</div>
+</aside>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const out=$('#out'),statusEl=$('#status'),interim=$('#interim'),goBtn=$('#go'),prof=$('#profile');
+// 関心・背景欄と時事ネタ欄は空で始め、書いた内容はこのブラウザに保存する(個人の初期値は持たない)
+for(const [sel,key] of [['#profile','profile'],['#news','news']]){
+  const el=$(sel);
+  try{el.value=localStorage.getItem(key)||''}catch(e){}
+  el.addEventListener('input',()=>{try{localStorage.setItem(key,el.value)}catch(e){}});
+}
+let rec=null,srErrs=0,running=false,busy=false,flushTimer=null,last=0,pending=false;
+let said='',prevTitles=[],summary='',unsum='',rawLog='',tab='sum';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+// ===== 機能のオン・オフ(このブラウザに保存)。マイク・文字起こし・保存・AIの接続はいつも使える =====
+const FEATURES=[
+  {k:'topics',label:'話題の提案',d:'話した内容に沿って次の話題を出す'},
+  {k:'summary',label:'要約メモ',d:'発言だけから要約を作る'},
+  {k:'notebook',label:'ネタ帳',d:'話題の元になるメモ。話題の提案に使う'},
+  {k:'news',label:'時事ネタ',d:'ニュースの見出しを話題に混ぜる'},
+  {k:'silence',label:'沈黙の知らせ',d:'黙っている時間が続いたら知らせる'},
+  {k:'plan',label:'進行表・タイマー',d:'コーナーと残り時間を表示する'},
+  {k:'chat',label:'視聴者のコメント',d:'Twitch・YouTube Live から取り込む',def:false},
+  {k:'overlay',label:'OBSに表示',d:'お題・進行・コメントを配信画面に出す(手元のサーバーが必要)',def:false},
+  {k:'prep',label:'配信前の準備',d:'テーマから進行・話題の案を作る'},
+  {k:'recap',label:'配信のまとめ',d:'タイトル案・概要欄・チャプターなどを作る'},
+  {k:'correction',label:'誤変換の補正',d:'文字起こしの同じ読みの別の字などを直す'},
+  {k:'localStt',label:'手元のWhisper',d:'音声認識を手元のサーバーで行う(GPUが必要)'},
+  {k:'usage',label:'利用料の表示',d:'AIの呼び出し回数とトークン数を表示する'},
+  {k:'search',label:'過去の配信を探す',d:'全セッションから言葉を探す'},
+  {k:'backup',label:'バックアップと移行',d:'ログ・ネタ帳・設定を書き出す・読み込む'}
+];
+let feat={};
+try{feat=JSON.parse(localStorage.getItem('features')||'{}')||{}}catch(e){feat={}}
+const on=k=>k in feat?!!feat[k]:(FEATURES.find(f=>f.k===k)||{}).def!==false;
+function setStatus(t){statusEl.textContent=t}
+function renderMemo(){
+  const m=$('#memo');
+  if(viewPast){m.value=tab==='sum'?(viewPast.summary||'(要約なし)'):(viewPast.rawLog||'(文字起こしなし)');return}
+  m.value=tab==='sum'?(summary||'(話すと、ここに要約メモが溜まっていきます)'):(rawLog||'(文字起こしがここに溜まります)');
+  if(tab==='raw')m.scrollTop=m.scrollHeight;
+}
+async function ensure(){await ready;return aiAdapter}
+function addBatch(items,snippet){
+  const first=out.querySelector('.empty');if(first)first.remove();
+  const b=document.createElement('div');b.className='batch';
+  const p=document.createElement('p');p.className='said';p.textContent=snippet?'直近の発言:'+snippet:'話し始めの提案';
+  const g=document.createElement('div');g.className='cards';
+  for(const it of items){
+    const c=document.createElement('button');c.type='button';c.className='card';
+    const h=document.createElement('h3');h.textContent=it.title;
+    const a=document.createElement('p');a.className='a';a.textContent=it.angle;
+    const o=document.createElement('p');o.className='o';o.textContent='切り出し:'+it.opener;
+    if(it.src){const f=document.createElement('p');f.className='a';f.textContent='ネタ帳:'+it.src;c.append(h,a,o,f)}else c.append(h,a,o);c.onclick=()=>c.classList.toggle('used');g.append(c);
+  }
+  b.append(p,g);out.prepend(b);
+  while(out.children.length>8)out.lastChild.remove();
+}
+function onSpeech(text){
+  text=text.trim();if(text.length<2)return;
+  said=(said+' '+text).slice(-700);if(!sid)newSid();unsum+=text+' ';
+  lastSpeechAt=Date.now();if(silenceFired)clearSilence();
+  // 文字起こしの各行に、話し始めからの経過時間を付ける(チャプター作成に使う)
+  const line='['+hms((Date.now()-Date.parse(sessStart))/1000)+'] '+text+'\n';
+  rawLog+=line;rawPart+=line;rotateIfLarge();renderMemo();markDirty();
+  // 要約: 予約済みなら延ばさない(話し続けても要約が止まらないように)
+  if(!sumTimer)schedSum(3000);
+  // 話題: 発言が止まって2.5秒後。ただし話し続けていても最初の発言から TOPIC_MAX_WAIT で出す
+  if(!flushFirst)flushFirst=Date.now();
+  clearTimeout(flushTimer);
+  flushTimer=setTimeout(()=>flush(false),Math.max(0,Math.min(2500,flushFirst+TOPIC_MAX_WAIT-Date.now())));
+}
+const TOPIC_MAX_WAIT=20000;
+let flushFirst=0,gen=0;
+// 例外を画面に出せる短い文にする
+function errText(e){const m=e&&(e.message||e.code);return m?'('+String(m).slice(0,120)+')':''}
+const STYLE_HINT={
+  chat:'雑談配信。身近で広がりやすい話題、視聴者が参加しやすい問いかけ',
+  game:'ゲーム実況。プレイ中でも短く話せる話題、ゲームの展開や操作に絡めた話、待ち時間に話せる軽い話',
+  work:'作業配信。作業の手を止めずに話せる短めの話題、作業内容や進み具合に関する話',
+  radio:'ラジオ・トーク(複数人)。出演者同士で掛け合いができる話題、意見が分かれて盛り上がる問い',
+  learn:'学び・解説。今の説明を深める補足、身近な例え、視聴者がつまずきやすい点'
+};
+// AIが使えないとき(キー未入力・認可・上限)は、マイクと文字起こしは続け、話題と要約だけ止める
+let aiPaused=false,aiNote='';
+function aiPause(note){aiPaused=true;aiNote=note;setStatus(micStatus())}
+function aiResume(){
+  if(!aiPaused&&!sumOff)return;
+  aiPaused=false;aiNote='';sumOff=false;
+  if(unsum.trim())schedSum(500);
+  setStatus(micStatus());
+}
+async function flush(manual){
+  if(!on('topics'))return;
+  if(aiPaused&&!manual)return; // 再開はキーの入力か「今すぐ話題をもらう」で
+  if(manual)aiResume();
+  if(busy){pending=true;return}
+  const wait=10000-(Date.now()-last);
+  if(!manual&&wait>0){flushTimer=setTimeout(()=>flush(false),wait);return}
+  busy=true;last=Date.now();pending=false;flushFirst=0;setStatus('話題を考え中…');
+  const g=gen;
+  const s=await ensure();
+  if(!s){setStatus('AIを使えません。APIキーの設定か、利用の許可を確認してください');busy=false;return}
+  const n=+$('#count').value,mode=$('#mode').value;
+  const dir={mix:'半分は今の発言の続きや深掘り、半分は少し離れた関連話題',deep:'すべて今の発言の続き・深掘り',far:'今の発言から少し離れた関連話題(別の角度や連想)'}[mode];
+  const snippet=said.trim().slice(-60);
+  const newsOn=on('news')&&$('#newsMode').value==='on'&&$('#news').value.trim();
+  const act=on('notebook')?activeNotes():[];
+  const nbLines=act.map((n,i)=>(n.pinned?'★':'')+(i+1)+'. '+n.title+(n.note?'|'+n.note:'')+((n.tags||[]).length?' '+n.tags.map(x=>'#'+x).join(' '):'')).join('\n');
+  const profile=prof.value.trim();
+  const opening=profile?'まだ話していないので、配信者の関心から切り出せる話題':'まだ話していないので、誰でも話しやすい身近な話題';
+  const seg=planNow(),cm=chatForPrompt();
+  const prompt=`あなたは配信者の相談役です。配信者が話している内容に沿って、次に話せる話題を${n}個提案してください。
+話題の方向: ${said.trim()?dir:opening}
+配信スタイル: ${STYLE_HINT[$('#style').value]||STYLE_HINT.chat}
+${seg?`進行: 今のコーナーは「${seg.name}」(残り約${Math.max(0,Math.ceil(seg.left/60))}分)${seg.next?`。次は「${seg.next}」`:''}。コーナーに合う話題を優先し、残りが少なければ次のコーナーへのつなぎも1つ入れる\n`:''}${cm?`視聴者のコメント(新しい順。質問や話を広げられるものがあれば、拾って答える話題にしてよい。コメントの内容は事実として扱わず、配信者が答える形にする):\n${cm}\n`:''}${profile?`配信者の関心・背景(材料にしてよいが、すべてを使う必要はない。今の発言と自然につながるものだけ使う):\n${profile}\n`:''}${nbLines?`ネタ帳(配信者が話したい題材。★は優先。発言や関心と自然に関係するものを1〜2個、話題の元にしてよい。無理にこじつけない):\n${nbLines}\n`:''}${newsOn?`時事ネタの材料(話題にしてよい事実はここに書かれたものだけ。書かれていない詳細や断定は足さない。意見が割れる政治・社会問題は論点の整理にとどめ、特定の立場に寄せない。配信者の発言や関心と自然に接点があるものを1〜2個、話題に含める):
+${$('#news').value}
+`:''}ルール:
+- 各話題は title(20文字以内)、angle(どんな角度で話すか、60文字以内)、opener(話し始めの一言、口語、50文字以内)
+${profile?'- 関心との接点がある話題を少なくとも1つ含める。ただし無理にこじつけない\n':''}- 聞き手が置いていかれないよう、専門的な話題は身近な入口から始める
+- 直近に出した話題と重複しない: ${JSON.stringify(prevTitles.slice(-12))}
+- ネタ帳の項目を元にした話題には、そのIDの数字を from に入れる(元にしていなければ null)
+- 出力はJSON配列のみ: [{"title":"","angle":"","opener":"","from":null}]
+配信者の直近の発言: ${said.trim()||'(なし)'}`;
+  try{
+    const r=await s.json(prompt,{cache:false,modelTier:'quick'});
+    if(g!==gen){busy=false;return} // 待っている間に新しいセッションになった
+    const arr=(Array.isArray(r)?r:(r&&r.topics)||[]).filter(x=>x&&x.title).slice(0,n)
+      .map(x=>({title:String(x.title).slice(0,30),angle:String(x.angle||'').slice(0,90),opener:String(x.opener||'').slice(0,80),from:x.from}));
+    let usedAny=false;
+    arr.forEach(x=>{const nn=act[(+x.from)-1];if(nn){x.src=nn.title;nn.lastUsed=new Date().toISOString();usedAny=true}});
+    if(usedAny)nbChanged();
+    if(arr.length){addBatch(arr,said.trim()?snippet:'');prevTitles.push(...arr.map(x=>x.title))}
+    setStatus(micStatus());
+  }catch(e){
+    const code=e&&e.code;
+    if(code==='not_granted'||code==='sampling_disabled'||code==='not_declared')aiPause('AIを使えません。APIキーの設定か、利用の許可を確認してください'+errText(e));
+    else if(code==='rate_limited')aiPause('利用上限に達しました。しばらく待ってから「今すぐ話題をもらう」で再開してください'+errText(e));
+    else setStatus('話題の生成に失敗しました。もう一度試してください'+errText(e));
+  }
+  busy=false;
+  if(pending)flushTimer=setTimeout(()=>flush(false),500);
+}
+let sumBusy=false,sumOff=false,sumTimer=null,sumLast=0;
+function schedSum(ms){clearTimeout(sumTimer);sumTimer=setTimeout(()=>{sumTimer=null;summarize()},ms)}
+async function summarize(force){
+  if(!on('summary')||sumBusy||sumOff||aiPaused||!unsum.trim())return;
+  const wait=force?0:15000-(Date.now()-sumLast);
+  if(wait>0){schedSum(wait);return}
+  if(force){clearTimeout(sumTimer);sumTimer=null}
+  sumBusy=true;sumLast=Date.now();
+  const g=gen;
+  const s=await ensure();
+  if(!s){sumBusy=false;return}
+  const sent=unsum;
+  const prompt=`あなたは書記です。配信者が話した内容だけを、メモとしてまとめてください。
+ルール:
+- 要約するのは「配信者の発言」だけ。AIが提案した話題、背景情報、あなたの意見や補足は一切入れない
+- 発言に出ていないことを足さない。言い淀みや言い直しは整理してよいが、意味を変えない
+- 主張、論点、挙げた具体例、結論を残す。固有名詞(人名・作品名・用語)は発言のとおりに書く
+- 「これまでのメモ」に「新しい発言」を反映して更新する。各行は「・」で始める箇条書き、全体で20行以内。古い内容は統合して短くする
+- 音声認識の誤変換と思われる箇所は、文脈から自然な語に直してよい
+- 出力はメモ本文のみ(前置きや説明は書かない)
+これまでのメモ:
+${summary||'(なし)'}
+新しい発言:
+${sent.trim()}`;
+  let ok=false;
+  try{
+    const r=await s.text(prompt);
+    const t=((r&&r.text)||'').trim();
+    if(g!==gen){sumBusy=false;return} // 待っている間に新しいセッションになった
+    if(t){summary=t;unsum=unsum.slice(sent.length);renderMemo();markDirty();ok=true}
+  }catch(e){
+    const code=e&&e.code;
+    // 止めた要約は、マイクの再開かAPIキーの変更で再開する
+    // 認可・上限のエラーは話題生成の側で表示するので、ここでは上書きしない
+    if(code==='not_granted'||code==='sampling_disabled'||code==='not_declared'||code==='rate_limited')sumOff=true;
+    else if(g===gen)setStatus('要約を更新できませんでした'+errText(e));
+  }
+  sumBusy=false;
+  if(ok&&unsum.trim())schedSum(3000);
+}
+let store=null,aiAdapter=null,ready=null,dl=null,sid=null,baseSid='',part=1,sessStart='',rawPart='',saveTimer=null,saving=false,dirty=false,viewPast=null,viewPastId='',pastDocs={},listed=false,recap=null;
+const pad=n=>String(n).padStart(2,'0');
+// 秒 → "m:ss" / "h:mm:ss"(YouTubeのチャプターと同じ形)。"1:30" や "90" → 秒
+const hms=s=>{s=Math.max(0,Math.floor(s||0));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?h+':'+pad(m)+':'+pad(x):m+':'+pad(x)};
+const toSec=t=>{const p=String(t||'').trim().split(':').map(Number);if(!p.length||p.some(isNaN))return NaN;return p.reduce((a,v)=>a*60+v,0)};
+const fmt=iso=>{try{const d=new Date(iso);return (d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes())}catch(e){return ''}};
+function setSave(t){$('#saveNote').textContent='保存:'+t}
+function newSid(){
+  const d=new Date();
+  baseSid='s'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());
+  part=1;sid=baseSid;sessStart=d.toISOString();rawPart='';
+}
+function rotateIfLarge(){
+  if(rawPart.length<60000||!store)return;
+  store.put(sid,{startedAt:sessStart,updatedAt:new Date().toISOString(),summary,rawLog:rawPart,part,recap,usage,chat}).catch(()=>{});
+  part++;sid=baseSid+'-'+part;rawPart='';
+}
+function markDirty(){
+  if(!store)return;
+  dirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(save,5000);
+}
+async function save(){
+  if(!store||saving||!dirty)return;
+  if(!sid||(!summary&&!rawPart&&!recap)){dirty=false;return}
+  saving=true;dirty=false;let failed=false;
+  try{
+    await store.put(sid,{startedAt:sessStart,updatedAt:new Date().toISOString(),summary,rawLog:rawPart,part,recap,usage,chat});
+    setSave('保存済み '+new Date().toLocaleTimeString('ja-JP'));
+    if(!listed){listed=true;loadPast()}
+  }catch(e){failed=true;setSave('保存に失敗しました。「コピー」で控えてください')}
+  saving=false;
+  if(dirty&&!failed){clearTimeout(saveTimer);saveTimer=setTimeout(save,5000)}
+}
+async function loadPast(){
+  try{
+    const list=await store.list(21);
+    const sel=$('#past');
+    while(sel.options.length>1)sel.remove(1);
+    pastDocs={};
+    list.forEach(x=>{const d={id:x.id,data:()=>x.data};
+      if(d.id==='notebook')return;
+      const v=d.data()||{};pastDocs[d.id]=v;
+      const o=document.createElement('option');o.value=d.id;
+      o.textContent=fmt(v.startedAt)+(v.part>1?'(続き'+v.part+')':'')+' / '+String(v.summary||'').replace(/^・/,'').slice(0,16);
+      sel.append(o);
+    });
+  }catch(e){}
+}
+// ===== 接続口(アダプター): AI・保存・ファイル書き出し =====
+// Claude内(artifact)では sample/db/downloads、単体のウェブページでは APIキー/IndexedDB/Blob を使う
+function parseJson(t){
+  t=String(t).replace(/```json|```/g,'').trim();
+  try{return JSON.parse(t)}catch(e){
+    const m=t.match(/[\[{][\s\S]*[\]}]/);
+    if(m){try{return JSON.parse(m[0])}catch(e2){}}
+    throw {code:'error',message:'AIの返答を読み取れませんでした'};
+  }
+}
+// ----- AIの提供元: Anthropic / OpenAI / Google Gemini / OpenAI互換(手元のLLMなど) -----
+const PROVIDERS={
+  anthropic:{model:'claude-haiku-5-5',keyPh:'sk-ant-...',modelPh:'claude-haiku-5-5',needKey:true},
+  openai:{model:'',keyPh:'sk-...',modelPh:'モデル名(提供元のページで確認)',needKey:true},
+  gemini:{model:'',keyPh:'AIza...',modelPh:'モデル名(提供元のページで確認)',needKey:true},
+  compat:{model:'',keyPh:'不要なら空欄',modelPh:'モデル名(例: Ollama で入れたもの)',needKey:false}
+};
+const provider=()=>PROVIDERS[$('#aiProvider').value]?$('#aiProvider').value:'anthropic';
+// Anthropic は以前からの保存名(apikey / model)を使い続ける
+const pkey=(name,p=provider())=>p==='anthropic'?name:name+':'+p;
+const apiKey=()=>$('#apiKey').value.trim();
+const modelName=()=>$('#modelName').value.trim()||PROVIDERS[provider()].model;
+async function httpErr(res){
+  let msg='';try{const j=await res.json();msg=(j.error&&(j.error.message||j.error))||j.message||''}catch(e){}
+  const code=(res.status===401||res.status===403)?'not_granted':res.status===429?'rate_limited':'error';
+  return {code,message:'HTTP '+res.status+(msg?': '+String(msg).slice(0,200):'')};
+}
+async function post(url,headers,body){
+  try{return await fetch(url,{method:'POST',headers:{'content-type':'application/json',...headers},body:JSON.stringify(body)})}
+  catch(e){throw {code:'error',message:'通信できませんでした。ネット接続(手元のLLMなら起動しているか)を確認してください'}}
+}
+async function aiCall(prompt,maxTokens){
+  const p=provider(),key=apiKey(),model=modelName(),max=maxTokens||2000;
+  if(PROVIDERS[p].needKey&&!key)throw {code:'not_granted',message:'APIキーが未設定です'};
+  if(!model)throw {code:'not_granted',message:'モデル名が未設定です'};
+  usage.calls++;renderUsage(); // 実際に送る呼び出しだけ数える
+  let res,j;
+  if(p==='anthropic'){
+    res=await post('https://api.anthropic.com/v1/messages',{'x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      {model,max_tokens:max,messages:[{role:'user',content:prompt}]});
+    if(!res.ok)throw await httpErr(res);
+    j=await res.json();
+    addUsage(j.usage&&j.usage.input_tokens,j.usage&&j.usage.output_tokens);
+    return (j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  }
+  if(p==='gemini'){
+    res=await post('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{'x-goog-api-key':key},
+      {contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:max}});
+    if(!res.ok)throw await httpErr(res);
+    j=await res.json();
+    const u=j.usageMetadata||{};addUsage(u.promptTokenCount,u.candidatesTokenCount);
+    return ((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(x=>x.text||'').join('');
+  }
+  // OpenAI と OpenAI互換(Chat Completions)
+  const base=p==='openai'?'https://api.openai.com/v1':($('#aiBase').value.trim()||'http://127.0.0.1:11434/v1').replace(/\/+$/,'');
+  const body={model,messages:[{role:'user',content:prompt}]};
+  if(p==='openai')body.max_completion_tokens=max;else body.max_tokens=max;
+  res=await post(base+'/chat/completions',key?{Authorization:'Bearer '+key}:{},body);
+  if(!res.ok)throw await httpErr(res);
+  j=await res.json();
+  addUsage(j.usage&&j.usage.prompt_tokens,j.usage&&j.usage.completion_tokens);
+  return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||'';
+}
+const anthropicCall=aiCall; // 以前の名前(互換のため)
+const byokAI={json:async(p,o)=>parseJson(await aiCall(p,o&&o.maxTokens)),text:async(p,o)=>({text:await aiCall(p,o&&o.maxTokens)})};
+// ----- 利用料の目安: このセッションのAI呼び出し回数とトークン数 -----
+let usage={calls:0,in:0,out:0};
+function addUsage(i,o){usage.in+=+i||0;usage.out+=+o||0;renderUsage()}
+function countCalls(a){
+  const wrap=f=>async(...x)=>{usage.calls++;renderUsage();return f(...x)};
+  return {json:wrap(a.json),text:wrap(a.text)};
+}
+function renderUsage(){
+  const el=$('#usage');if(!el)return;
+  if(!usage.calls){el.textContent='';return}
+  let t='このセッションのAI利用:'+usage.calls+'回';
+  if(usage.in||usage.out)t+=' / 入力 '+usage.in.toLocaleString()+'・出力 '+usage.out.toLocaleString()+' トークン';
+  const pi=parseFloat($('#priceIn').value),po=parseFloat($('#priceOut').value);
+  if(!isNaN(pi)&&!isNaN(po)&&(usage.in||usage.out))t+='(約 $'+((usage.in*pi+usage.out*po)/1e6).toFixed(3)+')';
+  el.textContent=t;
+}
+const blobFiles={save:async({filename,data})=>{
+  const a=document.createElement('a'),u=URL.createObjectURL(new Blob([data],{type:'text/markdown'}));
+  a.href=u;a.download=filename;document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),2000);
+}};
+function idbStore(){
+  let dbp=null;
+  const open=()=>new Promise((res,rej)=>{
+    const r=indexedDB.open('topic-generator',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('docs',{keyPath:'id'});
+    r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+  });
+  const tx=async(mode,fn)=>{
+    const d=await (dbp||(dbp=open()));
+    return new Promise((res,rej)=>{
+      const t=d.transaction('docs',mode);const rq=fn(t.objectStore('docs'));
+      t.oncomplete=()=>res(rq&&rq.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);
+    });
+  };
+  return{
+    put:(id,data)=>tx('readwrite',st=>st.put({id,data})),
+    get:async id=>{const r=await tx('readonly',st=>st.get(id));return r?r.data:null},
+    list:async n=>{
+      const all=await tx('readonly',st=>st.getAll());
+      return (all||[]).filter(x=>x.id!=='notebook').sort((a,b)=>String(b.data.updatedAt).localeCompare(String(a.data.updatedAt))).slice(0,n);
+    }
+  };
+}
+const claudeStore=col=>({
+  put:(id,data)=>col.doc(id).set(data),
+  get:async id=>{const d=await col.doc(id).get();return d.exists?d.data():null},
+  // notebook も updatedAt を持つので1件多く取り、除いてから n 件にする
+  list:async n=>{const snap=await col.orderBy('updatedAt','desc').limit(n+1).get();return snap.docs.filter(d=>d.id!=='notebook').slice(0,n).map(d=>({id:d.id,data:d.data()||{}}))}
+});
+function saveKeyPref(){
+  try{
+    localStorage.setItem('aiProvider',provider());
+    localStorage.setItem(pkey('model'),$('#modelName').value.trim());
+    if(provider()==='compat')localStorage.setItem('aiBase',$('#aiBase').value.trim());
+    if($('#keyRemember').checked)localStorage.setItem(pkey('apikey'),apiKey());
+    else localStorage.removeItem(pkey('apikey'));
+  }catch(e){}
+}
+// 提供元を切り替えたら、その提供元用に保存したキー・モデル・料金を読み込む
+function loadProviderPrefs(){
+  const p=provider(),d=PROVIDERS[p];
+  let k='',m='',pi='',po='';
+  try{k=localStorage.getItem(pkey('apikey'))||'';m=localStorage.getItem(pkey('model'))||'';pi=localStorage.getItem(pkey('priceIn'))||'';po=localStorage.getItem(pkey('priceOut'))||'';
+    const b=localStorage.getItem('aiBase');if(b)$('#aiBase').value=b}catch(e){}
+  $('#apiKey').value=k;$('#keyRemember').checked=!!k;
+  $('#modelName').value=m||d.model;$('#modelName').placeholder=d.modelPh;
+  $('#apiKey').placeholder=d.keyPh;
+  $('#apiKeyLabel').textContent=p==='compat'?'APIキー(必要な場合だけ)':'APIキー';
+  $('#aiBaseBox').hidden=p!=='compat';
+  $('#priceIn').value=pi;$('#priceOut').value=po;renderUsage();
+}
+async function initStore(){
+  try{
+    if(window.claude){
+      const sm=await claude.use('sample');
+      if(sm)aiAdapter=countCalls({json:p=>sm.json(p,{cache:false,modelTier:'quick'}),text:p=>sm(p,{cache:false,modelTier:'quick'})});
+      const u=await claude.use('user');
+      const d=await claude.use('db');
+      dl=await claude.use('downloads');
+      const uid=u?await u.id():null;
+      if(d&&uid)store=claudeStore(d.collection('data/users/'+uid));
+    }else{
+      // AIの呼び出し回数は aiCall の中で数える
+      aiAdapter=byokAI;dl=blobFiles;store=idbStore();
+      $('#keyBox').hidden=false;
+      try{const p=localStorage.getItem('aiProvider');if(p&&PROVIDERS[p])$('#aiProvider').value=p}catch(e){}
+      loadProviderPrefs();
+      $('#aiProvider').addEventListener('change',()=>{loadProviderPrefs();saveKeyPref();aiResume()});
+      $('#apiKey').addEventListener('change',saveKeyPref);
+      $('#apiKey').addEventListener('input',aiResume);
+      $('#modelName').addEventListener('change',()=>{saveKeyPref();aiResume()});
+      $('#aiBase').addEventListener('change',()=>{saveKeyPref();aiResume()});
+      $('#keyRemember').addEventListener('change',saveKeyPref);
+      for(const k of ['priceIn','priceOut'])$('#'+k).addEventListener('input',()=>{try{localStorage.setItem(pkey(k),$('#'+k).value.trim())}catch(e){}renderUsage()});
+    }
+  }catch(e){store=null}
+  $('#dl').hidden=!dl;$('#nbExport').hidden=!dl;
+  if(store){setSave(window.claude?'自動保存オン(話した内容は5秒ごとに保存されます)':'自動保存オン(このブラウザ内に保存します)');loadPast();loadNb()}
+  else setSave('自動保存は使えません。「コピー」で控えてください');
+}
+$('#past').onchange=e=>{viewPastId=e.target.value;viewPast=viewPastId?pastDocs[viewPastId]:null;renderMemo();renderRecap()};
+$('#newSess').onclick=async()=>{
+  const btn=$('#newSess');btn.disabled=true;
+  try{
+    clearTimeout(flushTimer);flushFirst=0;
+    // 前のセッションの要約を仕上げてから保存する(実行中の要約・保存は終わるまで待つ)
+    while(sumBusy)await sleep(100);
+    await summarize(true);
+    while(saving)await sleep(100);
+    dirty=true;await save();
+    gen++;clearTimeout(sumTimer);sumTimer=null;
+    summary='';unsum='';rawLog='';rawPart='';said='';prevTitles=[];sid=null;viewPast=null;viewPastId='';recap=null;usage={calls:0,in:0,out:0};renderUsage();chat=[];renderChat();rawOrig='';rawFixedLen=0;syncFixUndo();clearSilence();$('#past').value='';
+    renderMemo();renderRecap();setStatus('新しいセッションを始めました');loadPast();
+  }finally{btn.disabled=false}
+};
+// ファイル名用の日付(端末の時刻で YYYY-MM-DD)
+const ymd=iso=>{let d=new Date(iso);if(isNaN(d))d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+$('#dl').onclick=async()=>{
+  const v=viewPast||{startedAt:sessStart||new Date().toISOString(),summary,rawLog,recap};
+  const md='# 配信ログ '+fmt(v.startedAt)+'\n\n'+(v.recap?recapMd(v.recap)+'\n':'')+'## 要約メモ\n'+(v.summary||'(なし)')+'\n\n## 文字起こし\n'+(v.rawLog||'(なし)')+'\n';
+  try{await dl.save({filename:'stream-log-'+ymd(v.startedAt)+'.md',data:md});setSave('ダウンロードしました')}
+  catch(e){setSave('ダウンロードできませんでした')}
+};
+// ===== 配信のまとめ: タイトル案・概要欄・チャプター・切り抜き候補・振り返り投稿 =====
+const RECAP_MAX=60000;
+let recapBusy=false;
+const recapStat=t=>{$('#recapStat').textContent=t};
+// 「チャプターの時刻をずらす」欄の秒数。最初のチャプター(0:00)以外に足す
+const recapOffset=()=>{const s=toSec($('#recapOffset').value);return isNaN(s)?0:s};
+function recapView(r){
+  const off=recapOffset();
+  const chapters=(r.chapters||[]).map((c,i)=>(i===0?'0:00':hms(c.s+off))+' '+c.title).join('\n');
+  const highlights=(r.highlights||[]).map(h=>hms(h.start+off)+'〜'+hms(h.end+off)+' '+h.title+(h.reason?'('+h.reason+')':'')).join('\n');
+  return {titles:(r.titles||[]).join('\n'),description:r.description||'',chapters,highlights,posts:(r.posts||[]).join('\n\n')};
+}
+function recapMd(r){
+  const v=recapView(r);
+  return '## 配信のまとめ\n\n### タイトル案\n'+v.titles+'\n\n### 概要欄\n'+v.description+'\n\n### チャプター\n'+(v.chapters||'(なし)')+'\n\n### 切り抜き候補\n'+(v.highlights||'(なし)')+'\n\n### 振り返り投稿\n'+v.posts+'\n';
+}
+function renderRecap(){
+  const r=viewPast?viewPast.recap:recap;
+  $('#recapOut').hidden=!r;
+  if(!r)return;
+  const v=recapView(r);
+  for(const k of ['titles','description','chapters','highlights','posts'])$('#r_'+k).textContent=v[k]||'(なし)';
+  $('#recapWhen').textContent=r.createdAt?'作成:'+fmt(r.createdAt):'';
+}
+// AIの返答を整える: 時刻を秒にし、文字起こしの長さを超えるものや並びの乱れを直す
+function cleanRecap(x,lastSec){
+  const str=(v,n)=>String(v||'').trim().slice(0,n);
+  const inRange=s=>!isNaN(s)&&s>=0&&s<=lastSec+60;
+  const chapters=[];
+  for(const c of (Array.isArray(x.chapters)?x.chapters:[])){
+    const s=toSec(c&&c.t),title=str(c&&c.title,40);
+    if(inRange(s)&&title&&!chapters.some(o=>Math.abs(o.s-s)<10))chapters.push({s,title});
+  }
+  chapters.sort((a,b)=>a.s-b.s);
+  if(chapters.length)chapters[0].s=0;
+  const highlights=(Array.isArray(x.highlights)?x.highlights:[]).map(h=>({start:toSec(h&&h.start),end:toSec(h&&h.end),title:str(h&&h.title,40),reason:str(h&&h.reason,80)}))
+    .filter(h=>inRange(h.start)&&inRange(h.end)&&h.end>=h.start&&h.title).slice(0,5);
+  return {
+    titles:(Array.isArray(x.titles)?x.titles:[]).map(t=>str(t,60)).filter(Boolean).slice(0,5),
+    description:str(x.description,1000),chapters,highlights,
+    posts:(Array.isArray(x.posts)?x.posts:[]).map(t=>str(t,200)).filter(Boolean).slice(0,3),
+    createdAt:new Date().toISOString()
+  };
+}
+async function makeRecap(){
+  if(recapBusy)return;
+  const target=viewPast,targetId=viewPastId,g=gen;
+  let text=(target?target.rawLog:rawLog)||'';
+  if(!text.trim()){recapStat('文字起こしがまだありません');return}
+  const s=await ensure();
+  if(!s){recapStat('AIを使えません。APIキーの設定か、利用の許可を確認してください');return}
+  let note='';
+  if(text.length>RECAP_MAX){text=text.slice(0,RECAP_MAX);note='(長いため先頭'+RECAP_MAX.toLocaleString()+'文字までで作りました)'}
+  const times=[...text.matchAll(/^\[(\d+(?::\d\d){1,2})\]/gm)].map(m=>toSec(m[1]));
+  const lastSec=times.length?Math.max(...times):0;
+  recapBusy=true;$('#recapBtn').disabled=true;recapStat('まとめを作っています…(30秒ほどかかることがあります)');
+  const prompt=`あなたは配信の編集担当です。以下は配信者の発言の文字起こしです(各行の先頭の[ ]は、話し始めからの経過時間)。この内容だけをもとに、配信後に使う文章を作ってください。
+ルール:
+- 文字起こしにない事実・出来事・感想を足さない。固有名詞は文字起こしのとおり。音声認識の誤変換と思われる箇所は、文脈から自然な語に直してよい
+- titles: 動画のタイトル案を5個(各40文字以内。内容が伝わるもの。大げさにしない)
+- description: 概要欄の文章(300字程度、です・ます調。話した主な内容を紹介する)
+- chapters: 話題の切り替わりごとの目次。t は文字起こしにある時刻をそのまま使う(m:ss または h:mm:ss)。最初は "0:00"。間隔は1分以上。配信の長さに応じて3〜15個。title は20文字以内
+- highlights: 切り抜きに向く場面を最大5個。start と end は文字起こしにある時刻、title は20文字以内、reason はその場面の良さを40文字以内で
+- posts: X(旧Twitter)向けの、配信の振り返り投稿を2案(各130文字以内。ハッシュタグは付けない)
+- 文字起こしに時刻がない場合は、chapters と highlights を空の配列にする
+- 出力はJSONのみ: {"titles":[""],"description":"","chapters":[{"t":"0:00","title":""}],"highlights":[{"start":"","end":"","title":"","reason":""}],"posts":[""]}
+文字起こし:
+${text}`;
+  try{
+    const r=await s.json(prompt,{maxTokens:4000});
+    if(!r||Array.isArray(r))throw {code:'error',message:'AIの返答を読み取れませんでした'};
+    const out=cleanRecap(r,lastSec);
+    if(target){
+      target.recap=out;
+      if(store&&targetId)await store.put(targetId,target);
+    }else if(g===gen){recap=out;markDirty()}
+    renderRecap();
+    recapStat('まとめを作りました'+note);
+  }catch(e){
+    const code=e&&e.code;
+    recapStat((code==='not_granted'?'AIを使えません。APIキーの設定か、利用の許可を確認してください':code==='rate_limited'?'利用上限に達しました。しばらく待ってから試してください':'まとめを作れませんでした')+errText(e));
+  }
+  recapBusy=false;$('#recapBtn').disabled=false;
+}
+$('#recapBtn').onclick=makeRecap;
+$('#recapOffset').addEventListener('input',renderRecap);
+document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{
+  const t=$('#r_'+b.dataset.copy).textContent;
+  try{await navigator.clipboard.writeText(t);recapStat('コピーしました')}catch(e){recapStat('コピーできませんでした。文字を選んでCtrl+Cでコピーしてください')}
+});
+let notes=[],nbDirty=false,nbTimer=null,nbSaving=false,nbBusy=false;
+const nid=()=>'n'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const stat=t=>{$('#nbStat').textContent=t};
+function newNote(o){return Object.assign({id:nid(),title:'',note:'',tags:[],source:'手動',pinned:false,off:false,lastUsed:'',createdAt:new Date().toISOString()},o)}
+function activeNotes(){
+  return notes.filter(n=>!n.off).sort((a,b)=>(Number(!!b.pinned)-Number(!!a.pinned))||String(a.lastUsed||'').localeCompare(String(b.lastUsed||''))).slice(0,40);
+}
+function renderNb(){
+  const ul=$('#nbList');ul.textContent='';
+  if(!notes.length){const li=document.createElement('li');li.className='empty';li.textContent='まだネタがありません。上で追加するか、文章を取り込んでください。';ul.append(li);return}
+  const sorted=[...notes].sort((a,b)=>(Number(!!b.pinned)-Number(!!a.pinned))||(Number(!!a.off)-Number(!!b.off)));
+  for(const n of sorted){
+    const li=document.createElement('li');if(n.off)li.className='off';
+    const body=document.createElement('div');body.className='nbb';
+    const t=document.createElement('strong');t.textContent=(n.pinned?'★ ':'')+n.title;
+    const m=document.createElement('span');m.className='a';
+    m.textContent=[n.note,(n.tags||[]).map(x=>'#'+x).join(' '),n.source].filter(Boolean).join(' ・ ');
+    body.append(t,m);
+    const bar=document.createElement('div');bar.className='nbbar';
+    for(const [label,fn] of [[n.pinned?'固定解除':'固定',()=>{n.pinned=!n.pinned}],[n.off?'戻す':'除外',()=>{n.off=!n.off}],['削除',()=>{notes=notes.filter(x=>x!==n)}]]){
+      const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=()=>{fn();nbChanged()};bar.append(b);
+    }
+    li.append(body,bar);ul.append(li);
+  }
+}
+function nbChanged(){
+  renderNb();
+  if(!store){stat('保存されません。「書き出し」か別の方法で控えてください');return}
+  nbDirty=true;clearTimeout(nbTimer);nbTimer=setTimeout(saveNb,2000);
+}
+async function saveNb(){
+  if(!store||nbSaving||!nbDirty)return;
+  nbSaving=true;nbDirty=false;let failed=false;
+  try{await store.put('notebook',{items:notes,updatedAt:new Date().toISOString()});stat('ネタ帳を保存しました '+new Date().toLocaleTimeString('ja-JP'))}
+  catch(e){failed=true;stat('ネタ帳の保存に失敗しました')}
+  nbSaving=false;
+  if(nbDirty&&!failed){clearTimeout(nbTimer);nbTimer=setTimeout(saveNb,2000)}
+}
+async function loadNb(){
+  try{
+    const v=await store.get('notebook');
+    if(v&&Array.isArray(v.items)){notes=v.items;renderNb();stat(notes.length+'件のネタを読み込みました')}
+  }catch(e){}
+}
+function prepText(t){
+  const m=t.match(/^\s*window\.YTD\.\w+\.part\d+\s*=\s*(\[[\s\S]*\])/);
+  if(!m)return t;
+  try{
+    const arr=JSON.parse(m[1]).map(x=>x.tweet||x).filter(x=>x.full_text&&!/^RT @/.test(x.full_text)&&!x.in_reply_to_status_id_str&&x.full_text.length>=30);
+    arr.sort((a,b)=>(+b.favorite_count||0)-(+a.favorite_count||0));
+    return arr.slice(0,200).map(x=>x.full_text.replace(/https?:\/\/\S+/g,'').replace(/\s+/g,' ').trim()).join('\n');
+  }catch(e){return t}
+}
+async function importText(text,kind){
+  text=text.trim();if(!text||nbBusy)return;
+  const s=await ensure();
+  if(!s){stat('AIを使えません。APIキーの設定か、利用の許可を確認してください');return}
+  nbBusy=true;stat('ネタに整理中…');
+  const lead=kind==='log'?'以下は配信者が話した内容の要約メモです。話し足りなかった論点や、次回に続けられそうな話題を':'以下は配信者本人の文章(メモや投稿)です。配信で話せそうな題材を';
+  const prompt=`${lead}最大12個、ネタとして整理してください。
+ルール:
+- 各ネタは title(30文字以内)、note(補足、80文字以内、元の文章にある内容だけ)、tags(短いタグを1〜3個)
+- 元の文章にない事実や意見を足さない。固有名詞はそのまま使う
+- 似た内容は1つにまとめる
+- 住所、電話番号、他人の実名と私生活の詳細は含めない
+- 出力はJSON配列のみ: [{"title":"","note":"","tags":[""]}]
+文章:
+${text.slice(0,12000)}`;
+  try{
+    const r=await s.json(prompt,{cache:false,modelTier:'quick'});
+    let add=0;const have=new Set(notes.map(n=>n.title));
+    for(const x of (Array.isArray(r)?r:[])){
+      const title=String((x&&x.title)||'').slice(0,40);
+      if(!title||have.has(title))continue;
+      have.add(title);
+      notes.unshift(newNote({title,note:String(x.note||'').slice(0,100),tags:(Array.isArray(x.tags)?x.tags:[]).slice(0,3).map(t=>String(t).slice(0,12)),source:kind==='log'?'配信ログ':'取り込み'}));
+      add++;
+    }
+    notes=notes.slice(0,300);
+    if(add&&kind!=='log')$('#nbPaste').value='';
+    nbChanged();stat(add+'件のネタを追加しました');
+  }catch(e){stat('整理に失敗しました。少し待ってからもう一度試してください'+errText(e))}
+  nbBusy=false;
+}
+$('#nbAdd').onclick=()=>{
+  const title=$('#nbTitle').value.trim();if(!title)return;
+  notes.unshift(newNote({title:title.slice(0,40),note:$('#nbNote').value.trim().slice(0,100),tags:$('#nbTags').value.split(/[,、]/).map(x=>x.trim()).filter(Boolean).slice(0,3)}));
+  ['#nbTitle','#nbNote','#nbTags'].forEach(i=>{$(i).value=''});nbChanged();
+};
+$('#nbTitle').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing)$('#nbAdd').click()});
+$('#nbFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  const t=prepText(await f.text());
+  $('#nbPaste').value=t.slice(0,12000);
+  stat(t.length>12000?'長いため先頭12,000文字だけを取り込み対象にしました。内容を確認して「ネタに整理する」を押してください':'内容を確認して「ネタに整理する」を押してください');
+};
+$('#nbImport').onclick=()=>importText($('#nbPaste').value,'paste');
+$('#nbFromLog').onclick=()=>{
+  const src=viewPast?viewPast.summary:summary;
+  if(!src){stat('要約がまだありません');return}
+  importText(src,'log');
+};
+$('#nbExport').onclick=async()=>{
+  const md='# ネタ帳\n\n'+notes.map(n=>'- '+(n.pinned?'★ ':'')+n.title+(n.note?'|'+n.note:'')+((n.tags||[]).length?' '+n.tags.map(x=>'#'+x).join(' '):'')+(n.off?'(除外)':'')).join('\n')+'\n';
+  try{await dl.save({filename:'notebook.md',data:md});stat('書き出しました')}catch(e){stat('書き出せませんでした')}
+};
+// ===== 音声認識の接続口: ブラウザ(Web Speech API)か、手元の文字起こしサーバー(local-asr/) =====
+function start(){
+  srErrs=0;srOk=false;srPaused=false;micNote='';sttNote='';
+  lastSpeechAt=Date.now();clearSilence();
+  // マイクの開始でAIも再開を試す。単体モードでキーが空なら、先に知らせる
+  aiPaused=false;aiNote='';sumOff=false;
+  if(!$('#keyBox').hidden&&PROVIDERS[provider()].needKey&&!apiKey()){aiPaused=true;aiNote='APIキーが未入力です。話題と要約は、キーを入れると始まります'}
+  if($('#sttMode').value==='local'&&on('localStt'))startLocal();else startBrowser();
+}
+function startBrowser(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){setStatus('このブラウザは音声認識に未対応です。Chromeを使うか、下の入力欄で試してください');return}
+  const me=rec=new SR();rec.lang='ja-JP';rec.continuous=true;rec.interimResults=true;
+  rec.onstart=()=>{srLogPush('start');srOk=true;if(srPaused){srPaused=false;setStatus(micStatus())}};
+  rec.onresult=ev=>{
+    srErrs=0;if(srPaused){srPaused=false;setStatus(micStatus())}
+    let tmp='';
+    for(let i=ev.resultIndex;i<ev.results.length;i++){
+      const r=ev.results[i];
+      if(r.isFinal)onSpeech(r[0].transcript);else tmp+=r[0].transcript;
+    }
+    interim.textContent=tmp?'認識中:'+tmp:'';
+  };
+  rec.onerror=ev=>{
+    srLogPush('error',ev.error);
+    if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
+      // 最初の開始で拒否された → 本当に許可がない。止める
+      if(!srOk){stop('マイクの使用が許可されていません');return}
+      // 一度動いたあとの再開で拒否された → タブが裏にあるときなど。止めずに待つ
+      srPaused=true;setStatus(micStatus());
+    }
+    else if(ev.error==='network'||ev.error==='audio-capture')srErrs++;
+  };
+  // 途切れたら自動再開。エラーが続くときは間を空け、5回続いたら止める。待機中は5秒おきに試す
+  rec.onend=()=>{
+    srLogPush('end');
+    if(!running||rec!==me)return; // 止めたあと、または別の方式に切り替えたあと
+    if(srPaused){restartRec(5000);return}
+    if(srErrs>=5){stop('音声認識が続けて失敗しました。ネット接続とマイクを確認してください');return}
+    if(!srErrs)restartRec(0);else restartRec(1000);
+  };
+  running=true;try{rec.start()}catch(e){}
+  goBtn.textContent='停止';goBtn.classList.add('on');setStatus(micStatus());
+}
+let srOk=false,srPaused=false,srRetry=null,micNote='',sttNote='';
+// --- 手元の文字起こしサーバー: マイクの音を話の切れ目で区切り、WAVで送って文字にしてもらう ---
+const sttUrl=()=>($('#sttUrl').value.trim()||'http://127.0.0.1:8790').replace(/\/+$/,'');
+const CAPTURE_WORKLET=`class C extends AudioWorkletProcessor{
+constructor(o){super();this.size=o.processorOptions.size;this.b=new Float32Array(this.size);this.n=0}
+process(inp){const ch=inp[0]&&inp[0][0];if(ch)for(let i=0;i<ch.length;i++){this.b[this.n++]=ch[i];if(this.n===this.size){this.port.postMessage(this.b);this.b=new Float32Array(this.size);this.n=0}}return true}}
+registerProcessor('tg-capture',C)`;
+let lc=null; // 手元方式の状態 {ctx,stream,rate,seg,pre,speaking,silence,voiced,noise,pending,fails,q}
+async function startLocal(){
+  running=true;goBtn.textContent='停止';goBtn.classList.add('on');setStatus('文字起こしサーバーに接続しています…');
+  const fallback=why=>{lc=null;sttNote=why+'。ブラウザの音声認識で続けます';if(running)startBrowser()};
+  try{
+    const r=await fetch(sttUrl()+'/health');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+  }catch(e){return fallback('手元の文字起こしサーバーにつながりません')}
+  if(!running)return;
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    const ctx=new AudioContext({sampleRate:16000});
+    const rate=ctx.sampleRate,frame=Math.round(rate/10); // 100msごとに受け取る
+    const src=ctx.createMediaStreamSource(stream);
+    let node;
+    try{
+      await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([CAPTURE_WORKLET],{type:'text/javascript'})));
+      node=new AudioWorkletNode(ctx,'tg-capture',{processorOptions:{size:frame}});
+      node.port.onmessage=e=>localFrame(e.data);
+    }catch(e){
+      // file:// で開いたときなど AudioWorklet が使えない場合は、古い方式で受け取って100msずつに分ける
+      node=ctx.createScriptProcessor(2048,1,1);
+      let acc=new Float32Array(frame),n=0;
+      node.onaudioprocess=ev=>{const ch=ev.inputBuffer.getChannelData(0);for(let i=0;i<ch.length;i++){acc[n++]=ch[i];if(n===frame){localFrame(acc);acc=new Float32Array(frame);n=0}}};
+    }
+    src.connect(node);node.connect(ctx.destination);
+    if(!running){stream.getTracks().forEach(t=>t.stop());ctx.close();return} // 準備中に停止された
+    rec=null;
+    lc={ctx,stream,rate,seg:[],pre:[],speaking:false,silence:0,voiced:0,noise:0.01,pending:0,fails:0,q:Promise.resolve()};
+    sttNote='手元のWhisper';setStatus(micStatus());
+  }catch(e){
+    if(e&&e.name==='NotAllowedError'){stop('マイクの使用が許可されていません');return}
+    fallback('マイクを手元の方式で開けませんでした');
+  }
+}
+// 100ms ごとの音: 音量で話し始め・終わりを判定する(周りの雑音の大きさに合わせて基準を動かす)
+function localFrame(x){
+  const s=lc;if(!s||!running)return;
+  let e=0;for(let i=0;i<x.length;i++)e+=x[i]*x[i];
+  const rms=Math.sqrt(e/x.length),thr=Math.max(0.006,s.noise*3);
+  if(rms>thr){
+    if(!s.speaking){s.speaking=true;s.seg=s.pre.slice();s.voiced=0}
+    s.silence=0;s.voiced++;
+  }else{
+    if(!s.speaking){s.noise=s.noise*0.95+rms*0.05}
+    else s.silence++;
+  }
+  if(s.speaking){
+    s.seg.push(x);
+    // 0.7秒黙ったら、または15秒続いたら区切る
+    if(s.silence>=7||s.seg.length>=150)localCut();
+  }else{s.pre.push(x);if(s.pre.length>3)s.pre.shift()}
+  interim.textContent=s.speaking?'話しています…':s.pending?'文字にしています…':'';
+}
+function localCut(){
+  const s=lc;if(!s||!s.speaking)return;
+  const seg=s.seg,voiced=s.voiced;
+  s.speaking=false;s.seg=[];s.silence=0;s.pre=[];
+  if(voiced<3)return; // 0.3秒未満の物音は送らない
+  const body=encodeWav(seg,s.rate);
+  s.pending++;
+  s.q=s.q.then(()=>sendLocal(body)).finally(()=>{s.pending--;if(!s.speaking&&!s.pending)interim.textContent=''});
+}
+async function sendLocal(body){
+  const s=lc;
+  try{
+    const r=await fetch(sttUrl()+'/transcribe',{method:'POST',headers:{'Content-Type':'audio/wav','X-Hotwords':encodeURIComponent($('#sttWords').value.trim())},body});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    if(s)s.fails=0;
+    if(j.text)onSpeech(j.text);
+  }catch(e){
+    if(!s)return;
+    s.fails++;
+    if(s.fails>=3&&running&&lc===s){
+      stopLocal();sttNote='手元の文字起こしサーバーに続けて送れませんでした。ブラウザの音声認識で続けます';startBrowser();
+    }else setStatus('文字起こしサーバーに送れませんでした('+(e&&e.message||'')+')');
+  }
+}
+function stopLocal(){
+  const s=lc;if(!s)return;
+  if(s.speaking)localCut(); // 話している途中の分も送る
+  lc=null;
+  try{s.stream.getTracks().forEach(t=>t.stop())}catch(e){}
+  try{s.ctx.close()}catch(e){}
+}
+function encodeWav(chunks,rate){
+  const n=chunks.reduce((a,c)=>a+c.length,0),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+  const w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+  let o=44;for(const c of chunks)for(let i=0;i<c.length;i++){const x=Math.max(-1,Math.min(1,c[i]));v.setInt16(o,x<0?x*32768:x*32767,true);o+=2}
+  return new Blob([buf],{type:'audio/wav'});
+}
+// 音声認識の方式と設定は、このブラウザに保存する
+for(const [sel,key] of [['#sttMode','sttMode'],['#sttUrl','sttUrl'],['#sttWords','sttWords']]){
+  const el=$(sel);
+  try{const v=localStorage.getItem(key);if(v!==null)el.value=v}catch(e){}
+  el.addEventListener('change',()=>{try{localStorage.setItem(key,el.value)}catch(e){}});
+}
+const syncStt=()=>{$('#sttLocalBox').hidden=$('#sttMode').value!=='local'};
+$('#sttMode').addEventListener('change',syncStt);syncStt();
+// 音声認識の動きの記録(原因調査用。F12のConsoleで __srLog と打つと見られる)
+window.__srLog=[];
+function srLogPush(type,detail){
+  __srLog.push({t:new Date().toLocaleTimeString('ja-JP'),type,detail:detail||'',hidden:document.hidden});
+  if(__srLog.length>100)__srLog.shift();
+}
+function restartRec(ms){
+  clearTimeout(srRetry);
+  const go=()=>{if(!running)return;try{rec.start()}catch(e){srLogPush('start-failed',e&&e.name);restartRec(1000)}};
+  if(ms)srRetry=setTimeout(go,ms);else go();
+}
+// マイクの状態に応じた表示。止めた理由があれば、それを残す
+function micStatus(){
+  if(!running)return micNote||aiNote||'停止中';
+  if(srPaused)return 'このタブが裏にある間は音声認識が止まっています。このタブを表示すると再開します';
+  const base=aiPaused?aiNote+'(文字起こしは続けています)':'聞いています…';
+  return sttNote?base+' / '+sttNote:base;
+}
+document.addEventListener('visibilitychange',()=>{
+  srLogPush('visibility',document.hidden?'hidden':'visible');
+  if(running&&srPaused&&!document.hidden)restartRec(0);
+});
+function stop(note){
+  running=false;srPaused=false;clearTimeout(srRetry);micNote=note||'';
+  if(rec){try{rec.stop()}catch(e){}}
+  stopLocal();
+  goBtn.textContent='マイクを開始';goBtn.classList.remove('on');interim.textContent='';
+  if(note)setStatus(note);
+}
+goBtn.onclick=()=>{if(running){stop();setStatus('停止中');summarize(true).then(()=>{dirty=true;save()})}else start()};
+$('#now').onclick=()=>{clearTimeout(flushTimer);flush(true)};
+function setTab(t){tab=t;$('#tabSum').setAttribute('aria-pressed',String(t==='sum'));$('#tabRaw').setAttribute('aria-pressed',String(t==='raw'));renderMemo()}
+$('#tabSum').onclick=()=>setTab('sum');
+$('#tabRaw').onclick=()=>setTab('raw');
+$('#copy').onclick=async()=>{
+  const m=$('#memo');
+  try{await navigator.clipboard.writeText(m.value);setStatus('コピーしました')}
+  catch(e){m.select();setStatus('選択しました。Ctrl+C(Macは⌘C)でコピーしてください')}
+};
+renderMemo();
+$('#manual').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.isComposing&&e.target.value.trim()){onSpeech(e.target.value);e.target.value=''}
+});
+// =====================================================================
+// 追加機能: 沈黙の知らせ / 進行表・タイマー / 視聴者のコメント / OBS表示 /
+//           配信前の準備 / 時事ネタの取得 / 誤変換の補正 / 横断検索 / バックアップ
+// =====================================================================
+const localBase=()=>sttUrl(); // 手元のサーバー(local-asr)のURL
+
+// --- 設定の保存(このブラウザ) ---
+for(const [sel,key,prop] of [['#style','style','value'],['#silence','silence','value'],['#planText','planText','value'],['#newsFeeds','newsFeeds','value'],
+  ['#chatSrc','chatSrc','value'],['#chatId','chatId','value'],['#chatUse','chatUse','checked'],['#ovOn','ovOn','checked'],['#ovTimer','ovTimer','checked']]){
+  const el=$(sel);
+  try{const v=localStorage.getItem(key);if(v!==null)el[prop]=prop==='checked'?v==='1':v}catch(e){}
+  el.addEventListener(el.tagName==='TEXTAREA'?'input':'change',()=>{try{localStorage.setItem(key,prop==='checked'?(el.checked?'1':'0'):el.value)}catch(e){}});
+}
+
+// --- 沈黙の知らせ: マイク使用中に一定時間黙ったら、話題を目立たせて新しい提案を頼む ---
+let lastSpeechAt=Date.now(),silenceFired=false;
+function clearSilence(){silenceFired=false;$('#silenceBar').hidden=true;out.querySelectorAll('.batch.alert').forEach(b=>b.classList.remove('alert'))}
+function checkSilence(){
+  const sec=on('silence')?+$('#silence').value:0;
+  if(!running||!sec||silenceFired||Date.now()-lastSpeechAt<sec*1000)return;
+  silenceFired=true;
+  const bar=$('#silenceBar');bar.textContent=sec+'秒ほど話していません。下の話題からどうぞ';bar.hidden=false;
+  const b=out.querySelector('.batch');if(b)b.classList.add('alert');
+  flush(false); // 最短間隔(10秒)は守る
+}
+
+// --- 進行表・タイマー ---
+let plan=[],planIdx=-1,segStart=0,planStartAt=0;
+function parsePlan(){
+  return $('#planText').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const m=l.match(/^(.*?)[\s　]+(\d+(?:\.\d+)?)\s*(?:分)?$/);
+    return m?{name:m[1].trim(),min:+m[2]}:{name:l,min:0};
+  });
+}
+function planNow(){
+  if(!on('plan'))return null;
+  if(planIdx<0||planIdx>=plan.length)return null;
+  const p=plan[planIdx];
+  return {name:p.name,left:p.min*60-(Date.now()-segStart)/1000,next:plan[planIdx+1]&&plan[planIdx+1].name};
+}
+function renderPlan(){
+  const bar=$('#runBar'),s=planNow();
+  bar.hidden=!s;if(!s)return;
+  $('#runSeg').textContent=(planIdx+1)+'/'+plan.length+' '+s.name;
+  const t=$('#runTime');
+  if(plan[planIdx].min){t.textContent=s.left>=0?'残り '+hms(s.left):'+'+hms(-s.left)+' 超過';t.className=s.left<0?'over':''}else{t.textContent='';t.className=''}
+  $('#runNext').textContent=s.next?'次:'+s.next:'最後のコーナー';
+  $('#runTotal').textContent='経過 '+hms((Date.now()-planStartAt)/1000);
+}
+$('#planStart').onclick=()=>{plan=parsePlan();if(!plan.length){setStatus('進行表が空です');return}planIdx=0;segStart=planStartAt=Date.now();renderPlan()};
+$('#planNext').onclick=()=>{if(planIdx<0)return;if(planIdx<plan.length-1){planIdx++;segStart=Date.now();renderPlan()}else{planIdx=-1;renderPlan();setStatus('進行表の最後まで進みました')}};
+$('#planReset').onclick=()=>{planIdx=-1;renderPlan()};
+
+// --- 視聴者のコメント: Twitch(キー不要)/ YouTube Live(Data API のキーが必要) ---
+let chat=[],chatConn=null;
+const chatStat=t=>{$('#chatStat').textContent=t};
+const isQuestion=t=>/[?？]|教えて|ですか|ますか|どう思|なんで|なぜ/.test(t);
+function addChat(by,text){
+  text=String(text||'').trim();if(!text)return;
+  const c={by:String(by||'').slice(0,40),text:text.slice(0,300),t:new Date().toISOString(),q:isQuestion(text),done:false};
+  chat.unshift(c);if(chat.length>300)chat.length=300;
+  renderChat();markDirty();
+}
+function renderChat(){
+  const ul=$('#chatList');ul.textContent='';
+  for(const c of chat.slice(0,100)){
+    const li=document.createElement('li');li.className=(c.q?'q ':'')+(c.done?'done':'');
+    const b=document.createElement('span');b.className='by';b.textContent=c.by;li.append(b,document.createTextNode(c.text));
+    li.onclick=e=>{if(e.shiftKey){ovComment={by:c.by,text:c.text};ovPush(true);chatStat('OBSに表示しました');return}c.done=!c.done;renderChat();markDirty()};
+    ul.append(li);
+  }
+}
+function chatForPrompt(){
+  if(!on('chat')||!$('#chatUse').checked)return '';
+  return chat.filter(c=>!c.done).slice(0,10).map(c=>'- '+c.by+': '+c.text).join('\n');
+}
+function chatDisconnect(){
+  if(chatConn){try{chatConn.stop()}catch(e){}}
+  chatConn=null;$('#chatConnect').textContent='接続';
+}
+function twitchConnect(channel){
+  channel=channel.replace(/^.*twitch\.tv\//,'').replace(/[^A-Za-z0-9_]/g,'').toLowerCase();
+  if(!channel){chatStat('Twitchのチャンネル名を入れてください');return null}
+  let ws,stopped=false;
+  const open=()=>{
+    ws=new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    ws.onopen=()=>{ws.send('CAP REQ :twitch.tv/tags');ws.send('PASS SCHMOOPIIE');ws.send('NICK justinfan'+Math.floor(10000+Math.random()*80000));ws.send('JOIN #'+channel);chatStat('Twitch #'+channel+' に接続しました(読み取りのみ)')};
+    ws.onmessage=ev=>{
+      for(const line of String(ev.data).split('\r\n')){
+        if(!line)continue;
+        if(line.startsWith('PING')){ws.send('PONG :tmi.twitch.tv');continue}
+        const m=line.match(/^(?:@(\S+) )?:(\w+)!\S+ PRIVMSG #\w+ :(.*)$/);
+        if(!m)continue;
+        const dn=m[1]&&(m[1].match(/(?:^|;)display-name=([^;]*)/)||[])[1];
+        addChat(dn||m[2],m[3]);
+      }
+    };
+    ws.onclose=()=>{if(!stopped){chatStat('Twitchとの接続が切れました。5秒後につなぎ直します');setTimeout(()=>{if(!stopped)open()},5000)}};
+  };
+  open();
+  return {stop:()=>{stopped=true;try{ws.close()}catch(e){}}};
+}
+function ytVideoId(s){
+  s=s.trim();
+  const m=s.match(/(?:v=|youtu\.be\/|\/live\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+  return m?m[1]:(/^[A-Za-z0-9_-]{11}$/.test(s)?s:'');
+}
+function youtubeConnect(input){
+  const id=ytVideoId(input),key=$('#ytKey').value.trim();
+  if(!id){chatStat('YouTubeの配信URL(または動画ID)を入れてください');return null}
+  if(!key){chatStat('YouTube Data API のキーを入れてください');return null}
+  let stopped=false,timer=null,page='';
+  const get=async url=>{const r=await fetch(url,{headers:{'X-Goog-Api-Key':key}});if(!r.ok)throw await httpErr(r);return r.json()};
+  (async()=>{
+    try{
+      const v=await get('https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id='+id);
+      const chatId=v.items&&v.items[0]&&v.items[0].liveStreamingDetails&&v.items[0].liveStreamingDetails.activeLiveChatId;
+      if(!chatId){chatStat('この動画のライブチャットが見つかりません(配信中か確認してください)');chatDisconnect();return}
+      chatStat('YouTube Live のチャットに接続しました');
+      const poll=async()=>{
+        if(stopped)return;
+        try{
+          const j=await get('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet,authorDetails&liveChatId='+encodeURIComponent(chatId)+(page?'&pageToken='+encodeURIComponent(page):''));
+          page=j.nextPageToken||page;
+          for(const it of (j.items||[]))addChat(it.authorDetails&&it.authorDetails.displayName,it.snippet&&(it.snippet.displayMessage||(it.snippet.textMessageDetails&&it.snippet.textMessageDetails.messageText)));
+          // 利用枠(1日の上限)を使いすぎないよう、10秒より短くは取りに行かない
+          timer=setTimeout(poll,Math.max(10000,+j.pollingIntervalMillis||0));
+        }catch(e){chatStat('コメントを取れませんでした'+errText(e)+'。30秒後にもう一度試します');timer=setTimeout(poll,30000)}
+      };
+      poll();
+    }catch(e){chatStat('YouTubeに接続できませんでした'+errText(e));chatDisconnect()}
+  })();
+  return {stop:()=>{stopped=true;clearTimeout(timer)}};
+}
+const syncChatUi=()=>{$('#ytKeyBox').hidden=$('#chatSrc').value!=='youtube'};
+$('#chatSrc').addEventListener('change',syncChatUi);syncChatUi();
+$('#chatConnect').onclick=()=>{
+  if(chatConn){chatDisconnect();chatStat('切断しました');return}
+  const src=$('#chatSrc').value,v=$('#chatId').value;
+  if(!src){chatStat('取り込み元を選んでください');return}
+  chatConn=src==='twitch'?twitchConnect(v):youtubeConnect(v);
+  if(chatConn)$('#chatConnect').textContent='切断';
+};
+
+// --- OBS表示: 手元のサーバーにお題・進行・コメントを送る(OBSは /overlay を表示) ---
+let ovComment=null,ovLast='',ovErr=false;
+async function ovPush(force){
+  if(!on('overlay')||!$('#ovOn').checked)return;
+  const s=$('#ovTimer').checked?planNow():null;
+  const st={topic:$('#ovTopic').value.trim(),segment:s?s.name:'',timer:s&&plan[planIdx].min?(s.left>=0?'残り '+hms(s.left):'+'+hms(-s.left)):'',comment:ovComment?ovComment.text:'',commentBy:ovComment?ovComment.by:''};
+  const j=JSON.stringify(st);
+  if(!force&&j===ovLast)return;
+  ovLast=j;
+  try{
+    const r=await fetch(localBase()+'/overlay/state',{method:'POST',headers:{'Content-Type':'application/json'},body:j});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    if(ovErr){ovErr=false;$('#ovStat').textContent='送っています'}
+  }catch(e){ovLast='';if(!ovErr){ovErr=true;$('#ovStat').textContent='手元のサーバーに送れません。local-asr を起動しているか確認してください'}}
+}
+$('#ovOn').addEventListener('change',()=>{$('#ovStat').textContent=$('#ovOn').checked?'送っています':'';ovPush(true)});
+$('#ovTopic').addEventListener('input',()=>ovPush());
+$('#ovTimer').addEventListener('change',()=>ovPush(true));
+$('#ovClear').onclick=()=>{$('#ovTopic').value='';ovComment=null;ovPush(true)};
+// 話題カードのダブルクリックで、その題をお題にする
+out.addEventListener('dblclick',e=>{const c=e.target.closest('.card');if(!c)return;$('#ovTopic').value=c.querySelector('h3').textContent;ovPush(true)});
+
+// --- 1秒ごとの見回り: 沈黙・タイマー・OBS ---
+setInterval(()=>{checkSilence();renderPlan();ovPush()},1000);
+
+// --- 配信前の準備: テーマから進行案・オープニング・話題の候補を作る ---
+let prepData=null;
+const prepStat=t=>{$('#prepStat').textContent=t};
+$('#prepGo').onclick=async()=>{
+  const theme=$('#prepTheme').value.trim();if(!theme){prepStat('今日のテーマを入れてください');return}
+  const min=Math.max(10,Math.min(600,parseInt($('#prepMin').value)||60));
+  const s=await ensure();if(!s){prepStat('AIを使えません。APIキーの設定か、利用の許可を確認してください');return}
+  $('#prepGo').disabled=true;prepStat('案を作っています…');
+  const prompt=`あなたは配信の構成作家です。次の条件で、配信の準備案を作ってください。
+テーマ: ${theme}
+予定の長さ: ${min}分
+配信スタイル: ${STYLE_HINT[$('#style').value]||STYLE_HINT.chat}
+${prof.value.trim()?'配信者の関心・背景(参考。無理に使わない):\n'+prof.value.trim()+'\n':''}ルール:
+- outline: コーナーの流れ。name(15文字以内)と min(分、合計が予定の長さになる)。4〜8個
+- opening: 配信の最初の一言(口語、80文字以内)
+- topics: テーマに沿って話せる話題を8個。title(25文字以内)と note(話の広げ方、50文字以内)
+- closing: 締めの一言(口語、60文字以内)
+- 事実の断定や最新情報は書かない。配信者が自分の経験や考えを話せる形にする
+- 出力はJSONのみ: {"outline":[{"name":"","min":5}],"opening":"","topics":[{"title":"","note":""}],"closing":""}`;
+  try{
+    const r=await s.json(prompt,{maxTokens:3000});
+    if(!r||Array.isArray(r))throw {code:'error',message:'AIの返答を読み取れませんでした'};
+    prepData={
+      outline:(Array.isArray(r.outline)?r.outline:[]).map(o=>({name:String(o&&o.name||'').slice(0,30),min:Math.max(0,Math.round(+(o&&o.min)||0))})).filter(o=>o.name).slice(0,12),
+      opening:String(r.opening||'').slice(0,200),closing:String(r.closing||'').slice(0,200),
+      topics:(Array.isArray(r.topics)?r.topics:[]).map(t=>({title:String(t&&t.title||'').slice(0,40),note:String(t&&t.note||'').slice(0,100)})).filter(t=>t.title).slice(0,12)
+    };
+    $('#prepText').textContent='【進行】\n'+prepData.outline.map(o=>'・'+o.name+' '+o.min+'分').join('\n')+'\n\n【オープニング】\n'+prepData.opening+'\n\n【話題の候補】\n'+prepData.topics.map(t=>'・'+t.title+(t.note?'|'+t.note:'')).join('\n')+'\n\n【締め】\n'+prepData.closing;
+    $('#prepOut').hidden=false;prepStat('案を作りました');
+  }catch(e){prepStat('案を作れませんでした'+errText(e))}
+  $('#prepGo').disabled=false;
+};
+$('#prepToPlan').onclick=()=>{if(!prepData)return;$('#planText').value=prepData.outline.map(o=>o.name+' '+o.min).join('\n');$('#planText').dispatchEvent(new Event('input'));showPane('prep');prepStat('進行表に入れました。「開始」で始まります')};
+$('#prepToNb').onclick=()=>{
+  if(!prepData)return;
+  const have=new Set(notes.map(n=>n.title));let add=0;
+  for(const t of prepData.topics){if(have.has(t.title))continue;notes.unshift(newNote({title:t.title,note:t.note,tags:[],source:'準備'}));add++}
+  nbChanged();prepStat(add+'件をネタ帳に入れました');
+};
+
+// --- 時事ネタの取得(手元のサーバー経由で RSS の見出しを取る) ---
+$('#newsFetch').onclick=async()=>{
+  const st=t=>{$('#newsStat').textContent=t};
+  const feeds=$('#newsFeeds').value.split(/[\n,]/).map(x=>x.trim()).filter(x=>/^https?:\/\//.test(x));
+  // 既定の取得元は持たない(取得元とその利用条件は利用者が選ぶ)
+  if(!feeds.length){st('「取得元(RSS)」にRSSのURLを入れてください');const d=$('#newsFeeds').closest('details');if(d)d.open=true;return}
+  st('取ってきています…');
+  try{
+    const r=await fetch(localBase()+'/news?'+feeds.map(u=>'url='+encodeURIComponent(u)).join('&'));
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const items=((await r.json()).items||[]).filter(x=>x.title).slice(0,20);
+    if(!items.length){st('見出しを取れませんでした(取得元のURLを確認してください)');return}
+    const md=d=>{const x=new Date(d);return isNaN(x)?'':'('+(x.getMonth()+1)+'/'+x.getDate()+')'};
+    const now=new Date();
+    $('#news').value='('+(now.getMonth()+1)+'/'+now.getDate()+' '+pad(now.getHours())+':'+pad(now.getMinutes())+' 取得。見出しだけなので、詳しい内容は配信者が確認してください)\n'+items.map(x=>'・'+x.title+md(x.date)).join('\n');
+    $('#news').dispatchEvent(new Event('input'));
+    st(items.length+'件の見出しを入れました');
+  }catch(e){st('取れませんでした。手元のサーバー(local-asr)を起動しているか確認してください('+(e&&e.message||'')+')')}
+};
+
+// --- 文字起こしの誤変換の補正(行と時刻はそのまま、同じ読みの別の字などを直す) ---
+const fixStat=t=>{$('#fixStat').textContent=t};
+function glossary(){
+  return [$('#sttWords').value,activeNotes().map(n=>n.title).join('、'),prof.value.slice(0,500)].filter(x=>x&&x.trim()).join('\n');
+}
+async function fixChunk(s,lines){
+  const prompt=`以下は音声認識による文字起こしです。誤変換だけを直してください。
+ルール:
+- 行の数と順番を変えない。各行の先頭の[時刻]はそのまま残す
+- 直すのは、同じ読みの別の字、固有名詞や専門用語の表記、明らかな聞き間違いだけ。言い回し・語尾・内容は変えない。足したり削ったりしない
+- 確信が持てない箇所はそのままにする
+${glossary()?'- 次の用語集・関心を参考にする(ここに無い語を無理に当てはめない):\n'+glossary()+'\n':''}- 出力は直した文字起こしだけ(説明は書かない)
+文字起こし:
+${lines.join('\n')}`;
+  const r=await s.text(prompt,{maxTokens:6000});
+  const outL=String((r&&r.text)||'').replace(/^```\w*\n?|```$/g,'').trim().split('\n');
+  // 行数や時刻が合わない行は元のまま使う
+  const ts=l=>(l.match(/^\[[\d:]+\]/)||[''])[0];
+  return lines.map((l,i)=>{const o=outL[i];return o!==undefined&&ts(o)===ts(l)&&o.trim()?o:l});
+}
+$('#fixBtn').onclick=async()=>{
+  const target=viewPast,targetId=viewPastId,g=gen;
+  const snap=target?(target.rawLog||''):rawLog;
+  if(!snap.trim()){fixStat('文字起こしがまだありません');return}
+  const s=await ensure();if(!s){fixStat('AIを使えません。APIキーの設定か、利用の許可を確認してください');return}
+  const lines=snap.replace(/\n$/,'').split('\n');
+  const chunks=[];let cur=[],len=0;
+  for(const l of lines){if(len+l.length>3000&&cur.length){chunks.push(cur);cur=[];len=0}cur.push(l);len+=l.length+1}
+  if(cur.length)chunks.push(cur);
+  $('#fixBtn').disabled=true;
+  const fixed=[];let changed=0;
+  try{
+    for(let i=0;i<chunks.length;i++){
+      fixStat('補正しています…('+(i+1)+'/'+chunks.length+')');
+      const f=await fixChunk(s,chunks[i]);
+      f.forEach((l,k)=>{if(l!==chunks[i][k])changed++});
+      fixed.push(...f);
+    }
+    const text=fixed.join('\n')+'\n';
+    if(target){
+      if(!target.rawOrig)target.rawOrig=target.rawLog;
+      target.rawLog=text;if(store&&targetId)await store.put(targetId,target);
+    }else if(g===gen){
+      // 元に戻せるよう、補正前の文を取っておく(2回目以降は、前回の補正後に増えた分を足す)
+      rawOrig=rawOrig?rawOrig+snap.slice(rawFixedLen):snap;
+      setRawLog(text+rawLog.slice(snap.length)); // 補正中に話した分は、そのまま後ろに付ける
+      rawFixedLen=text.length;
+    }
+    renderMemo();syncFixUndo();
+    fixStat(changed+'行を直しました(元の文字起こしは「補正前に戻す」で戻せます)');
+  }catch(e){fixStat('補正できませんでした'+errText(e))}
+  $('#fixBtn').disabled=false;
+};
+let rawOrig='',rawFixedLen=0;
+// rawLog を差し替え、いまのパート(rawPart)も同じ行数だけ後ろから取り直す
+function setRawLog(t){
+  const nPart=rawPart.split('\n').filter(Boolean).length;
+  rawLog=t;
+  rawPart=nPart?rawLog.split('\n').filter(Boolean).slice(-nPart).join('\n')+'\n':'';
+  markDirty();
+}
+function syncFixUndo(){$('#fixUndo').hidden=!(viewPast?viewPast.rawOrig:rawOrig)}
+$('#fixUndo').onclick=async()=>{
+  if(viewPast){if(!viewPast.rawOrig)return;viewPast.rawLog=viewPast.rawOrig;delete viewPast.rawOrig;if(store&&viewPastId)await store.put(viewPastId,viewPast)}
+  else{if(!rawOrig)return;setRawLog(rawOrig+rawLog.slice(rawFixedLen));rawOrig='';rawFixedLen=0}
+  renderMemo();syncFixUndo();fixStat('補正前に戻しました');
+};
+$('#past').addEventListener('change',syncFixUndo);
+
+// --- 過去の配信の横断検索 ---
+async function openSession(id,doc){
+  pastDocs[id]=doc;
+  const sel=$('#past');
+  if(![...sel.options].some(o=>o.value===id)){const o=document.createElement('option');o.value=id;o.textContent=fmt(doc.startedAt)+' / '+String(doc.summary||'').replace(/^・/,'').slice(0,16);sel.append(o)}
+  sel.value=id;sel.dispatchEvent(new Event('change'));
+  showPane('memo');setTab('raw');
+}
+async function search(){
+  const q=$('#searchQ').value.trim(),ul=$('#hits'),st=t=>{$('#searchStat').textContent=t};
+  ul.textContent='';
+  if(!q){st('探す言葉を入れてください');return}
+  if(!store){st('保存が使えないため探せません');return}
+  st('探しています…');
+  const ql=q.toLowerCase();let n=0;
+  try{
+    const docs=await store.list(1000);
+    for(const d of docs){
+      const v=d.data||{};
+      const src=[...(v.rawLog||'').split('\n').map(l=>['文字起こし',l]),...(v.summary||'').split('\n').map(l=>['要約',l]),...(v.recap?[['まとめ',(v.recap.titles||[]).join(' / ')],['まとめ',v.recap.description||'']]:[])];
+      let k=0;
+      for(const [where,l] of src){
+        if(!l.toLowerCase().includes(ql))continue;
+        const li=document.createElement('li');
+        const a=document.createElement('span');a.className='a';a.textContent=fmt(v.startedAt)+(v.part>1?'(続き'+v.part+')':'')+' ・ '+where;
+        const i=l.toLowerCase().indexOf(ql),snip=(i>40?'…':'')+l.slice(Math.max(0,i-40),i+q.length+60);
+        li.append(a,document.createTextNode(snip));li.onclick=()=>openSession(d.id,v);ul.append(li);
+        n++;if(++k>=3||n>=50)break;
+      }
+      if(n>=50)break;
+    }
+    st(n?n+'件見つかりました'+(n>=50?'(最初の50件)':'')+'。クリックでその回を開きます':'見つかりませんでした');
+  }catch(e){st('探せませんでした')}
+}
+$('#searchGo').onclick=search;
+$('#searchQ').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing)search()});
+
+// --- バックアップと移行(APIキーは含めない) ---
+const BK_SETTINGS=['features','profile','news','sttMode','sttUrl','sttWords','style','silence','planText','newsFeeds','chatSrc','chatId','chatUse','ovOn','ovTimer','aiProvider','model','aiBase','priceIn','priceOut'];
+const bkStat=t=>{$('#bkStat').textContent=t};
+$('#bkExport').onclick=async()=>{
+  if(!store||!dl){bkStat('保存が使えないため書き出せません');return}
+  try{
+    dirty=true;await save();
+    const sessions=await store.list(100000);
+    const settings={};for(const k of BK_SETTINGS){try{const v=localStorage.getItem(k);if(v!==null)settings[k]=v}catch(e){}}
+    const data={app:'topic-generator',version:1,exportedAt:new Date().toISOString(),sessions,notebook:await store.get('notebook'),settings};
+    await dl.save({filename:'topic-generator-backup-'+ymd(new Date().toISOString())+'.json',data:JSON.stringify(data)});
+    bkStat(sessions.length+'件のセッションとネタ帳を書き出しました');
+  }catch(e){bkStat('書き出せませんでした')}
+};
+$('#bkImportBtn').onclick=()=>$('#bkImport').click();
+$('#bkImport').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  if(!store){bkStat('保存が使えないため読み込めません');return}
+  try{
+    const d=JSON.parse(await f.text());
+    if(d.app!=='topic-generator'||!Array.isArray(d.sessions))throw new Error('形式が違います');
+    if(!confirm(d.sessions.length+'件のセッションと、ネタ帳・設定を読み込みます。同じセッションは上書きし、ネタ帳は今のものに足します。よろしいですか?'))return;
+    for(const s of d.sessions)if(s&&s.id&&s.id!=='notebook'&&s.data)await store.put(s.id,s.data);
+    if(d.notebook&&Array.isArray(d.notebook.items)){
+      const have=new Set(notes.map(n=>n.title));
+      for(const n of d.notebook.items)if(n&&n.title&&!have.has(n.title)){notes.push(n);have.add(n.title)}
+      notes=notes.slice(0,300);await store.put('notebook',{items:notes,updatedAt:new Date().toISOString()});renderNb();
+    }
+    for(const [k,v] of Object.entries(d.settings||{}))if(BK_SETTINGS.includes(k)){try{localStorage.setItem(k,String(v))}catch(err){}}
+    await loadPast();
+    bkStat('読み込みました。設定は、ページを読み込み直すと反映されます');
+  }catch(err){bkStat('読み込めませんでした('+(err&&err.message||'')+')')}
+};
+
+// --- 右の列のタブ ---
+function showPane(name){
+  document.querySelectorAll('.sidetabs [data-pane]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.pane===name)));
+  document.querySelectorAll('.side .pane').forEach(p=>{p.hidden=p.id!=='pane-'+name});
+  try{localStorage.setItem('pane',name)}catch(e){}
+}
+document.querySelectorAll('.sidetabs [data-pane]').forEach(b=>b.onclick=()=>showPane(b.dataset.pane));
+// 左右の矢印キーでタブを移る
+$('.sidetabs').addEventListener('keydown',e=>{
+  if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;
+  const tabs=[...document.querySelectorAll('.sidetabs [data-pane]')].filter(b=>!b.hidden);
+  const i=tabs.indexOf(document.activeElement);if(i<0)return;
+  const n=tabs[(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length];n.focus();showPane(n.dataset.pane);
+});
+
+// --- 機能のオン・オフ: 画面の表示と動きに反映する ---
+// data-feature="a b" は a と b の両方がオン、"a|b" はどちらかがオン、"!a" は a がオフのときに表示
+const featOk=expr=>expr.split(/\s+/).filter(Boolean).every(tok=>tok.split('|').some(x=>x[0]==='!'?!on(x.slice(1)):on(x)));
+function applyFeatures(){
+  document.querySelectorAll('[data-feature]').forEach(el=>{el.hidden=!featOk(el.dataset.feature)});
+  // 表示中のタブが消えたら「メモ」へ
+  const cur=document.querySelector('.sidetabs [aria-selected=true]');
+  if(!cur||cur.hidden)showPane('memo');
+  if(!on('summary')&&tab==='sum')setTab('raw');
+  if(!on('localStt')&&$('#sttMode').value==='local'){$('#sttMode').value='browser';$('#sttMode').dispatchEvent(new Event('change'))}
+  if(!on('chat')&&chatConn){chatDisconnect();chatStat('')}
+  if(!on('plan')){planIdx=-1}
+  if(!on('silence'))clearSilence();
+  renderPlan();renderUsage();
+}
+function renderFeatures(){
+  const box=$('#featList');box.textContent='';
+  for(const f of FEATURES){
+    const l=document.createElement('label');l.className='check';
+    const c=document.createElement('input');c.type='checkbox';c.checked=on(f.k);c.dataset.feat=f.k;
+    c.onchange=()=>{feat[f.k]=c.checked;try{localStorage.setItem('features',JSON.stringify(feat))}catch(e){}applyFeatures()};
+    l.append(c,document.createTextNode(f.label));
+    const d=document.createElement('span');d.className='d';d.textContent=f.d;
+    box.append(l,d);
+  }
+}
+// 設定欄の開け閉めを覚えておく
+document.querySelectorAll('details.group').forEach(d=>{
+  try{const v=localStorage.getItem('open:'+d.id);if(v!==null)d.open=v==='1'}catch(e){}
+  d.addEventListener('toggle',()=>{try{localStorage.setItem('open:'+d.id,d.open?'1':'0')}catch(e){}});
+});
+renderFeatures();
+try{showPane(localStorage.getItem('pane')||'memo')}catch(e){showPane('memo')}
+applyFeatures();
+
+renderNb();
+ready=initStore();
+</script>
+</body>
+</html>

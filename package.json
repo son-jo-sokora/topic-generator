@@ -1,0 +1,17 @@
+{
+  "name": "topic-generator",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "配信者向けの話題ジェネレーター(単一HTML)",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 \"tests/*.test.js\"",
+    "test:standalone": "node --test tests/standalone.test.js",
+    "test:claude": "node --test tests/claude-mode.test.js",
+    "test:extended": "node --test tests/extended.test.js",
+    "serve": "npx --yes http-server -a 127.0.0.1 -p 8000 -c-1 ."
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
